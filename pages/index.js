@@ -39,6 +39,11 @@ class Home extends Component {
       messagingSenderId: "250112620252"
     });
     this.database = firebase.database();
+    this.database
+      .ref("chats/" + this.props.id + `/aliases/${this.username}`)
+      .set({
+        value: this.username
+      });
     this.database.ref(`chats/${this.props.id}/chat`).on("value", snapshot => {
       this.setState({ messages: snapshot.val() });
     });
@@ -46,6 +51,7 @@ class Home extends Component {
       .ref(`chats/${this.props.id}/aliases/`)
       .on("value", snapshot => {
         if (snapshot.val()) {
+          console.log(snapshot.val());
           this.setState({ aliases: snapshot.val() });
         }
       });
