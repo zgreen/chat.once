@@ -4,10 +4,8 @@ import axios from "axios";
 
 class Countdown extends Component {
   static async getInitialProps({ query }) {
-    console.log("hello countdown");
     if (query && query.id) {
       const id = escape(query.id);
-      console.log(query);
       setTimeout(() => {
         axios
           .get("http://localhost:3000/", { params: { id, destroy: 1 } })
