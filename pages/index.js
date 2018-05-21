@@ -1,46 +1,49 @@
-import "firebase/database";
-import querystring from "querystring";
-import React, { Component } from "react";
-import Link from "next/link";
-import Router from "next/router";
-import uniqueString from "unique-string";
-import escape from "lodash.escape";
-import * as firebase from "firebase";
-import moment from "moment";
-import naclFactory from "js-nacl";
-import axios from "axios";
-import ChatWindow from "../components/ChatWindow";
-import Destroyer from "../components/Destroyer";
+// @flow
+import 'firebase/database'
+import querystring from 'querystring'
+import React, { Component } from 'react'
+import Router from 'next/router'
+import uniqueString from 'unique-string'
+import escape from 'lodash.escape'
+import * as firebase from 'firebase'
+import moment from 'moment'
+import naclFactory from 'js-nacl'
+import ChatWindow from '../components/ChatWindow'
+import Destroyer from '../components/Destroyer'
 
-import { actionsStyles, appStyles } from "../components/styles";
+import { actionsStyles, appStyles } from '../components/styles'
 
-class Home extends Component {
-  static async getInitialProps({ req, res, query }) {
+type HomeProps = {
+  id: String,
+  isNew: Boolean
+}
+
+class Home extends Component<HomeProps> {
+  static async getInitialProps ({ req, res, query }) {
     if (query) {
-      //const { query } = req;
-      const id = escape(query.id) || uniqueString();
+      const id = escape(query.id) || uniqueString()
       return {
         id,
         isNew: !query.id
-      };
+      }
     }
-    return {};
+    return {}
   }
-  constructor(props) {
-    super(props);
-    this.handleCommand = this.handleCommand.bind(this);
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleUsernameSubmit = this.handleUsernameSubmit.bind(this);
+  constructor (props) {
+    super(props)
+    this.handleCommand = this.handleCommand.bind(this)
+    this.handleChange = this.handleChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleUsernameSubmit = this.handleUsernameSubmit.bind(this)
     this.state = {
-      inputVal: "",
+      inputVal: '',
       messages: {},
-      username: "",
+      username: '',
       aliases: {},
-      remainingTime: ""
-    };
+      remainingTime: ''
+    }
   }
-  componentDidMount() {
+  componentDidMount () {
     // if (this.props.remainingLifetime) {
     //   console.log("yep");
     //   console.log(this.props.remainingLifetime());
@@ -49,32 +52,32 @@ class Home extends Component {
     // }
 
     naclFactory.instantiate(nacl => {
-      this.nacl = nacl;
-      this.keyPair = this.nacl.crypto_sign_keypair();
-    });
-    const { id } = this.props;
-    this.username = uniqueString();
+      this.nacl = nacl
+      this.keyPair = this.nacl.crypto_sign_keypair()
+    })
+    const { id } = this.props
+    this.username = uniqueString()
     this.setState({
       username: this.username,
       aliases: { [this.username]: { value: this.username } }
-    });
+    })
     firebase.initializeApp({
-      apiKey: "AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4",
-      authDomain: "oncechat-22dac.firebaseapp.com",
-      databaseURL: "https://oncechat-22dac.firebaseio.com",
-      projectId: "oncechat-22dac",
-      storageBucket: "oncechat-22dac.appspot.com",
-      messagingSenderId: "250112620252"
-    });
-    this.database = firebase.database();
+      apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
+      authDomain: 'oncechat-22dac.firebaseapp.com',
+      databaseURL: 'https://oncechat-22dac.firebaseio.com',
+      projectId: 'oncechat-22dac',
+      storageBucket: 'oncechat-22dac.appspot.com',
+      messagingSenderId: '250112620252'
+    })
+    this.database = firebase.database()
     setTimeout(() => {
       this.database.ref(`chats/${id}/command`).set({
-        value: "destroy"
-      });
-    }, 1000 * 60 * 60 * 24);
-    const curDate = Date.now();
-    const endTime = curDate + 1000 * 60 * 60 * 24;
-    const endDur = new moment(Date.now() + 1000 * 60 * 60 * 24);
+        value: 'destroy'
+      })
+    }, 1000 * 60 * 60 * 24)
+    const curDate = Date.now()
+    const endTime = curDate + 1000 * 60 * 60 * 24
+    const endDur = new moment(Date.now() + 1000 * 60 * 60 * 24)
 
     // setInterval(() => {
     //   const nowDur = new moment(Date.now());
@@ -91,22 +94,22 @@ class Home extends Component {
     //     // )}`
     //   }));
     // }, 1000);
-    this.database.ref(`chats/${id}/command`).on("value", snapshot => {
-      console.log(snapshot.val());
+    this.database.ref(`chats/${id}/command`).on('value', snapshot => {
+      console.log(snapshot.val())
       if (snapshot.val()) {
         switch (snapshot.val().value) {
-          case "destroy":
+          case 'destroy':
             Router.push({
-              pathname: "/destroy"
+              pathname: '/destroy'
               // query: { id: this.props.id }
-            });
-            this.database.ref(`chats/${this.props.id}`).remove();
-            console.log("destroy!");
-            break;
+            })
+            this.database.ref(`chats/${this.props.id}`).remove()
+            console.log('destroy!')
+            break
           // no default
         }
       }
-    });
+    })
     // this.database
     //   .ref(`chats/${this.props.id}/connections`)
     //   .on("child_removed", snapshot => {
@@ -120,71 +123,71 @@ class Home extends Component {
     this.database
       .ref(`chats/${this.props.id}/connections/${this.username}`)
       .onDisconnect()
-      .remove();
+      .remove()
     this.database
       .ref(`chats/${this.props.id}/connections/${this.username}`)
       .set({
         value: true
-      });
+      })
     this.database
-      .ref("chats/" + this.props.id + `/aliases/${this.username}`)
+      .ref('chats/' + this.props.id + `/aliases/${this.username}`)
       .set({
         value: this.username
-      });
-    this.database.ref(`chats/${this.props.id}/chat`).on("value", snapshot => {
-      this.setState({ messages: snapshot.val() });
-    });
+      })
+    this.database.ref(`chats/${this.props.id}/chat`).on('value', snapshot => {
+      this.setState({ messages: snapshot.val() })
+    })
     this.database
       .ref(`chats/${this.props.id}/aliases/`)
-      .on("value", snapshot => {
+      .on('value', snapshot => {
         if (snapshot.val()) {
-          this.setState({ aliases: snapshot.val() });
+          this.setState({ aliases: snapshot.val() })
         }
-      });
-    if (!querystring.parse(window.location.search)["?id"]) {
+      })
+    if (!querystring.parse(window.location.search)['?id']) {
       Router.push({
-        pathname: "/",
+        pathname: '/',
         query: { id: this.props.id }
-      });
+      })
     }
   }
-  handleChange(e, inputCase = "message") {
+  handleChange (e, inputCase = 'message') {
     switch (inputCase) {
-      case "message":
-        this.setState({ inputVal: e.target.value });
-        break;
-      case "username":
-        this.setState({ username: e.target.value });
-        break;
+      case 'message':
+        this.setState({ inputVal: e.target.value })
+        break
+      case 'username':
+        this.setState({ username: e.target.value })
+        break
       // no default
     }
   }
-  handleCommand(e, command = "destroy") {
-    e.preventDefault();
-    const { id } = this.props;
+  handleCommand (e, command = 'destroy') {
+    e.preventDefault()
+    const { id } = this.props
     this.database.ref(`chats/${id}/command`).set({
       value: command
-    });
+    })
   }
-  handleUsernameSubmit(e) {
-    e.preventDefault();
+  handleUsernameSubmit (e) {
+    e.preventDefault()
     if (this.state.username === this.username) {
-      this.usernameInput.focus();
-      return;
+      this.usernameInput.focus()
+      return
     }
     this.database
-      .ref("chats/" + this.props.id + `/aliases/${this.username}`)
+      .ref('chats/' + this.props.id + `/aliases/${this.username}`)
       .set({
         value: this.state.username
-      });
+      })
   }
-  handleSubmit(e) {
-    console.log("handleSubmit", this.props);
-    e.preventDefault();
-    const { nacl } = this;
+  handleSubmit (e) {
+    console.log('handleSubmit', this.props)
+    e.preventDefault()
+    const { nacl } = this
     if (!nacl) {
-      console.log("bailing");
-      return;
+      console.log('bailing')
+      return
     }
     this.database.ref(`chats/${this.props.id}/chat`).push({
       value: {
@@ -197,10 +200,10 @@ class Home extends Component {
         ),
         publicKey: this.keyPair.signPk
       }
-    });
-    this.setState({ inputVal: "" });
+    })
+    this.setState({ inputVal: '' })
   }
-  render() {
+  render () {
     const {
       database,
       handleUsernameSubmit,
@@ -209,11 +212,11 @@ class Home extends Component {
       username,
       handleCommand,
       nacl
-    } = this;
-    const { id, url } = this.props;
-    const { aliases, messages, inputVal } = this.state;
+    } = this
+    const { id, url } = this.props
+    const { aliases, messages, inputVal } = this.state
     return (
-      <div className="app">
+      <div className='app'>
         <ChatWindow
           {...{
             aliases,
@@ -229,14 +232,14 @@ class Home extends Component {
           {appStyles}
         </style>
         <style jsx>{actionsStyles}</style>
-        <section className="actions">
+        <section className='actions'>
           <h2>Actions</h2>
-          <a className="action button" href="/">
+          <a className='action button' href='/'>
             Start a new chat
           </a>
           <button
-            className="action button"
-            onClick={e => handleCommand(e, "destroy")}
+            className='action button'
+            onClick={e => handleCommand(e, 'destroy')}
           >
             Destroy this chat
           </button>
@@ -247,38 +250,38 @@ class Home extends Component {
               nextID={uniqueString()}
             />
           )} */}
-          <form className="action" onSubmit={e => e.preventDefault()}>
-            <label className="linkDisplay">
+          <form className='action' onSubmit={e => e.preventDefault()}>
+            <label className='linkDisplay'>
               Your link is <code>{url.asPath}</code>
             </label>
-            <button className="button">Click to copy</button>
+            <button className='button'>Click to copy</button>
           </form>
           {!aliases[username] ||
             (aliases[username].value === username && (
-              <form className="action" onSubmit={handleUsernameSubmit}>
-                <div className="userNameFields">
+              <form className='action' onSubmit={handleUsernameSubmit}>
+                <div className='userNameFields'>
                   <label>
-                    Your username is:{" "}
+                    Your username is:{' '}
                     <input
                       ref={input => {
-                        this.usernameInput = input;
+                        this.usernameInput = input
                       }}
-                      className="userNameInput"
+                      className='userNameInput'
                       placeholder={this.state.username}
-                      onChange={e => handleChange(e, "username")}
+                      onChange={e => handleChange(e, 'username')}
                     />
                   </label>
-                  <p className="userNameNote">
+                  <p className='userNameNote'>
                     You may change it, but only once.
                   </p>
                 </div>
-                <button className="button">Change username</button>
+                <button className='button'>Change username</button>
               </form>
             ))}
           <p>This chat will be destroyed in {this.state.remainingTime}</p>
         </section>
       </div>
-    );
+    )
   }
 }
-export default Home;
+export default Home
