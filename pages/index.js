@@ -10,7 +10,6 @@ import moment from 'moment'
 import naclFactory from 'js-nacl'
 import ChatWindow from '../components/ChatWindow'
 import Destroyer from '../components/Destroyer'
-
 import { actionsStyles, appStyles } from '../components/styles'
 
 type HomeProps = {
@@ -40,6 +39,7 @@ class Home extends Component<HomeProps> {
       messages: {},
       username: '',
       aliases: {},
+      status: 'ready',
       remainingTime: ''
     }
   }
@@ -182,26 +182,29 @@ class Home extends Component<HomeProps> {
       })
   }
   handleSubmit (e) {
-    console.log('handleSubmit', this.props)
     e.preventDefault()
     const { nacl } = this
     if (!nacl) {
-      console.log('bailing')
+      window.alert(`This message could not be signed, and wasn't sent.`)
       return
     }
-    this.database.ref(`chats/${this.props.id}/chat`).push({
-      value: {
-        username: this.username,
-        message: nacl.to_hex(
-          nacl.crypto_sign(
-            nacl.encode_utf8(this.state.inputVal),
-            this.keyPair.signSk
-          )
-        ),
-        publicKey: this.keyPair.signPk
-      }
+    this.setState({ status: 'pending' }, () => {
+      this.database.ref(`chats/${this.props.id}/chat`).push(
+        {
+          value: {
+            username: this.username,
+            message: nacl.to_hex(
+              nacl.crypto_sign(
+                nacl.encode_utf8(this.state.inputVal),
+                this.keyPair.signSk
+              )
+            ),
+            publicKey: this.keyPair.signPk
+          }
+        },
+        () => this.setState({ inputVal: '', status: 'ready' })
+      )
     })
-    this.setState({ inputVal: '' })
   }
   render () {
     const {
@@ -214,7 +217,7 @@ class Home extends Component<HomeProps> {
       nacl
     } = this
     const { id, url } = this.props
-    const { aliases, messages, inputVal } = this.state
+    const { aliases, messages, inputVal, status } = this.state
     return (
       <div className='app'>
         <ChatWindow
@@ -225,7 +228,8 @@ class Home extends Component<HomeProps> {
             handleChange,
             handleSubmit,
             inputVal,
-            username
+            username,
+            status
           }}
         />
         <style jsx global>
