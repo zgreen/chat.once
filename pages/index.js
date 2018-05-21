@@ -1,3 +1,4 @@
+import "firebase/database";
 import querystring from "querystring";
 import React, { Component } from "react";
 import Link from "next/link";
@@ -5,80 +6,23 @@ import Router from "next/router";
 import uniqueString from "unique-string";
 import escape from "lodash.escape";
 import * as firebase from "firebase";
-import "firebase/database";
-import ChatWindow from "../components/ChatWindow";
-import css from "styled-jsx/css";
-// import nacl from "../util/nacl";
+import moment from "moment";
 import naclFactory from "js-nacl";
+import axios from "axios";
+import ChatWindow from "../components/ChatWindow";
+import Destroyer from "../components/Destroyer";
 
-const appStyles = css`
-  :root {
-    --baseFontSize: 20px;
-    --darkGray: #444;
-    --brown: #91847a;
-    --tomato: tomato;
-    --veryLightYellow: #fcfbf2;
-  }
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    background-color: var(--veryLightYellow);
-    margin: 0;
-  }
-`;
-
-const actionsStyles = css`
-  .action {
-    margin-bottom: 20px;
-  }
-  .actions {
-    align-items: flex-start;
-    display: flex;
-    flex-direction: column;
-  }
-  .app {
-    display: flex;
-    font-family: monospace;
-  }
-  .button {
-    appearance: none;
-    background-color: var(--tomato);
-    border: 0;
-    border-radius: 5px;
-    color: #f7f7f7;
-    font-family: monospace;
-    font-size: 16px;
-    letter-spacing: 1px;
-    padding: 10px;
-    text-decoration: none;
-    text-transform: uppercase;
-  }
-  .linkDisplay {
-    display: block;
-  }
-  .userNameInput {
-    background-color: var(--veryLightYellow);
-    border: 0;
-    border-bottom: 2px solid var(--darkGray);
-    display: block;
-    font-size: 18px;
-    font-family: monospace;
-  }
-
-  .userNameNote {
-    color: var(--brown);
-    margin: 5px 0 20px;
-  }
-`;
+import { actionsStyles, appStyles } from "../components/styles";
 
 class Home extends Component {
-  static async getInitialProps(req) {
-    if (req.query) {
-      const { query } = req;
+  static async getInitialProps({ req, res, query }) {
+    if (query) {
+      //const { query } = req;
       const id = escape(query.id) || uniqueString();
-      return { id, isNew: !query.id };
-      // return { id, isNew: !query.id };
+      return {
+        id,
+        isNew: !query.id
+      };
     }
     return {};
   }
@@ -92,16 +36,22 @@ class Home extends Component {
       inputVal: "",
       messages: {},
       username: "",
-      aliases: {}
+      aliases: {},
+      remainingTime: ""
     };
   }
   componentDidMount() {
+    // if (this.props.remainingLifetime) {
+    //   console.log("yep");
+    //   console.log(this.props.remainingLifetime());
+    // } else {
+    //   console.log("nope");
+    // }
+
     naclFactory.instantiate(nacl => {
       this.nacl = nacl;
       this.keyPair = this.nacl.crypto_sign_keypair();
     });
-
-    console.log("did mount");
     const { id } = this.props;
     this.username = uniqueString();
     this.setState({
@@ -117,10 +67,40 @@ class Home extends Component {
       messagingSenderId: "250112620252"
     });
     this.database = firebase.database();
+    setTimeout(() => {
+      this.database.ref(`chats/${id}/command`).set({
+        value: "destroy"
+      });
+    }, 1000 * 60 * 60 * 24);
+    const curDate = Date.now();
+    const endTime = curDate + 1000 * 60 * 60 * 24;
+    const endDur = new moment(Date.now() + 1000 * 60 * 60 * 24);
+
+    // setInterval(() => {
+    //   const nowDur = new moment(Date.now());
+    //   const diff = moment.duration(endDur.diff(nowDur));
+    //   console.log(moment(diff));
+    //   this.setState(({ remainingTime }) => ({
+    //     remainingTime: diff.format("HH:mm:ss")
+    //     // remainingTime: `${differenceInHours(
+    //     //   endTime,
+    //     //   curTime
+    //     // )}:${differenceInMinutes(endTime, curTime)}:${differenceInSeconds(
+    //     //   endTime,
+    //     //   curTime
+    //     // )}`
+    //   }));
+    // }, 1000);
     this.database.ref(`chats/${id}/command`).on("value", snapshot => {
+      console.log(snapshot.val());
       if (snapshot.val()) {
         switch (snapshot.val().value) {
-          case "destory":
+          case "destroy":
+            Router.push({
+              pathname: "/destroy"
+              // query: { id: this.props.id }
+            });
+            this.database.ref(`chats/${this.props.id}`).remove();
             console.log("destroy!");
             break;
           // no default
@@ -158,7 +138,6 @@ class Home extends Component {
       .ref(`chats/${this.props.id}/aliases/`)
       .on("value", snapshot => {
         if (snapshot.val()) {
-          console.log(snapshot.val());
           this.setState({ aliases: snapshot.val() });
         }
       });
@@ -174,7 +153,6 @@ class Home extends Component {
       case "message":
         this.setState({ inputVal: e.target.value });
         break;
-      // no default
       case "username":
         this.setState({ username: e.target.value });
         break;
@@ -182,7 +160,6 @@ class Home extends Component {
     }
   }
   handleCommand(e, command = "destroy") {
-    console.log(command);
     e.preventDefault();
     const { id } = this.props;
     this.database.ref(`chats/${id}/command`).set({
@@ -190,7 +167,6 @@ class Home extends Component {
     });
   }
   handleUsernameSubmit(e) {
-    console.log("handleUsernameSubmit", this.state.username);
     e.preventDefault();
     if (this.state.username === this.username) {
       this.usernameInput.focus();
@@ -203,8 +179,13 @@ class Home extends Component {
       });
   }
   handleSubmit(e) {
+    console.log("handleSubmit", this.props);
     e.preventDefault();
     const { nacl } = this;
+    if (!nacl) {
+      console.log("bailing");
+      return;
+    }
     this.database.ref(`chats/${this.props.id}/chat`).push({
       value: {
         username: this.username,
@@ -221,6 +202,7 @@ class Home extends Component {
   }
   render() {
     const {
+      database,
       handleUsernameSubmit,
       handleChange,
       handleSubmit,
@@ -228,7 +210,7 @@ class Home extends Component {
       handleCommand,
       nacl
     } = this;
-    const { url } = this.props;
+    const { id, url } = this.props;
     const { aliases, messages, inputVal } = this.state;
     return (
       <div className="app">
@@ -239,7 +221,8 @@ class Home extends Component {
             nacl,
             handleChange,
             handleSubmit,
-            inputVal
+            inputVal,
+            username
           }}
         />
         <style jsx global>
@@ -257,6 +240,13 @@ class Home extends Component {
           >
             Destroy this chat
           </button>
+          {/* {database && (
+            <Destroyer
+              href="/destroy"
+              dbRef={database.ref(`chats/${id}`)}
+              nextID={uniqueString()}
+            />
+          )} */}
           <form className="action" onSubmit={e => e.preventDefault()}>
             <label className="linkDisplay">
               Your link is <code>{url.asPath}</code>
@@ -285,6 +275,7 @@ class Home extends Component {
                 <button className="button">Change username</button>
               </form>
             ))}
+          <p>This chat will be destroyed in {this.state.remainingTime}</p>
         </section>
       </div>
     );
