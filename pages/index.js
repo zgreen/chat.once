@@ -1,5 +1,6 @@
 // @flow
 import 'firebase/database'
+import axios from 'axios'
 import React, { Component } from 'react'
 import Router from 'next/router'
 import uniqueString from 'unique-string'
@@ -19,9 +20,13 @@ type HomeProps = {
 
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
+    const lifetime = 10000
     if (query) {
       const id = escape(query.id) || uniqueString()
-      const remainingTime = parseInt(query.lifetime, 10) || 10000
+      const remainingTime = parseInt(query.lifetime, 10) || lifetime
+      setTimeout(() => {
+        axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)
+      }, lifetime)
       return {
         id,
         isNew: !query.id,
