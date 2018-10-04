@@ -1,157 +1,65 @@
 // @flow
 import 'firebase/database'
-import querystring from 'querystring'
 import React, { Component } from 'react'
 import Router from 'next/router'
 import uniqueString from 'unique-string'
 import escape from 'lodash.escape'
 import * as firebase from 'firebase'
-import moment from 'moment'
 import naclFactory from 'js-nacl'
 import ChatWindow from '../components/ChatWindow'
 import Destroyer from '../components/Destroyer'
 import { actionsStyles, appStyles } from '../components/styles'
+import SiteWrap from '../components/SiteWrap'
 
 type HomeProps = {
   id: String,
-  isNew: Boolean
+  isNew: Boolean,
+  url: Object
 }
 
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     if (query) {
       const id = escape(query.id) || uniqueString()
+      const remainingTime = parseInt(query.lifetime, 10) || 10000
       return {
         id,
-        isNew: !query.id
+        isNew: !query.id,
+        remainingTime
       }
     }
     return {}
   }
   constructor (props) {
     super(props)
-    this.handleCommand = this.handleCommand.bind(this)
-    this.handleChange = this.handleChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-    this.handleUsernameSubmit = this.handleUsernameSubmit.bind(this)
+    this.username = uniqueString()
     this.state = {
       inputVal: '',
       messages: {},
-      username: '',
-      aliases: {},
+      username: this.username,
+      aliases: { [this.username]: { value: this.username } },
       status: 'ready',
-      remainingTime: ''
+      remainingTime: this.props.remainingTime,
+      didSetLifetime: false,
+      remainingTimeInterval: null
     }
   }
   componentDidMount () {
-    // if (this.props.remainingLifetime) {
-    //   console.log("yep");
-    //   console.log(this.props.remainingLifetime());
-    // } else {
-    //   console.log("nope");
-    // }
-
+    const { id, isNew } = this.props
+    this.initFirebase()
     naclFactory.instantiate(nacl => {
       this.nacl = nacl
       this.keyPair = this.nacl.crypto_sign_keypair()
     })
-    const { id } = this.props
-    this.username = uniqueString()
-    this.setState({
-      username: this.username,
-      aliases: { [this.username]: { value: this.username } }
-    })
-    firebase.initializeApp({
-      apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
-      authDomain: 'oncechat-22dac.firebaseapp.com',
-      databaseURL: 'https://oncechat-22dac.firebaseio.com',
-      projectId: 'oncechat-22dac',
-      storageBucket: 'oncechat-22dac.appspot.com',
-      messagingSenderId: '250112620252'
-    })
-    this.database = firebase.database()
-    setTimeout(() => {
-      this.database.ref(`chats/${id}/command`).set({
-        value: 'destroy'
-      })
-    }, 1000 * 60 * 60 * 24)
-    const curDate = Date.now()
-    const endTime = curDate + 1000 * 60 * 60 * 24
-    const endDur = new moment(Date.now() + 1000 * 60 * 60 * 24)
-
-    // setInterval(() => {
-    //   const nowDur = new moment(Date.now());
-    //   const diff = moment.duration(endDur.diff(nowDur));
-    //   console.log(moment(diff));
-    //   this.setState(({ remainingTime }) => ({
-    //     remainingTime: diff.format("HH:mm:ss")
-    //     // remainingTime: `${differenceInHours(
-    //     //   endTime,
-    //     //   curTime
-    //     // )}:${differenceInMinutes(endTime, curTime)}:${differenceInSeconds(
-    //     //   endTime,
-    //     //   curTime
-    //     // )}`
-    //   }));
-    // }, 1000);
-    this.database.ref(`chats/${id}/command`).on('value', snapshot => {
-      console.log(snapshot.val())
-      if (snapshot.val()) {
-        switch (snapshot.val().value) {
-          case 'destroy':
-            Router.push({
-              pathname: '/destroy'
-              // query: { id: this.props.id }
-            })
-            this.database.ref(`chats/${this.props.id}`).remove()
-            console.log('destroy!')
-            break
-          // no default
-        }
-      }
-    })
-    // this.database
-    //   .ref(`chats/${this.props.id}/connections`)
-    //   .on("child_removed", snapshot => {
-    //     this.setState({ connections: snapshot.val() }, () => {
-    //       console.log(this.state.connections);
-    //       if (!this.props.isNew) {
-    //         // console.log("destory!");
-    //       }
-    //     });
-    //   });
-    this.database
-      .ref(`chats/${this.props.id}/connections/${this.username}`)
-      .onDisconnect()
-      .remove()
-    this.database
-      .ref(`chats/${this.props.id}/connections/${this.username}`)
-      .set({
-        value: true
-      })
-    this.database
-      .ref('chats/' + this.props.id + `/aliases/${this.username}`)
-      .set({
-        value: this.username
-      })
-    this.database.ref(`chats/${this.props.id}/chat`).on('value', snapshot => {
-      this.setState({ messages: snapshot.val() })
-    })
-    this.database
-      .ref(`chats/${this.props.id}/aliases/`)
-      .on('value', snapshot => {
-        if (snapshot.val()) {
-          this.setState({ aliases: snapshot.val() })
-        }
-      })
-    if (!querystring.parse(window.location.search)['?id']) {
+    if (isNew) {
       Router.push({
         pathname: '/',
-        query: { id: this.props.id }
+        query: { id }
       })
     }
+    this.setState({ remainingTimeInterval: this.updateRemainingTime() })
   }
-  handleChange (e, inputCase = 'message') {
+  handleChange = (e, inputCase = 'message') => {
     switch (inputCase) {
       case 'message':
         this.setState({ inputVal: e.target.value })
@@ -162,14 +70,14 @@ class Home extends Component<HomeProps> {
       // no default
     }
   }
-  handleCommand (e, command = 'destroy') {
+  handleCommand = (e = { preventDefault: () => null }, command = 'destroy') => {
     e.preventDefault()
     const { id } = this.props
     this.database.ref(`chats/${id}/command`).set({
       value: command
     })
   }
-  handleUsernameSubmit (e) {
+  handleUsernameSubmit = e => {
     e.preventDefault()
     if (this.state.username === this.username) {
       this.usernameInput.focus()
@@ -181,7 +89,7 @@ class Home extends Component<HomeProps> {
         value: this.state.username
       })
   }
-  handleSubmit (e) {
+  handleSubmit = e => {
     e.preventDefault()
     const { nacl } = this
     if (!nacl) {
@@ -206,9 +114,82 @@ class Home extends Component<HomeProps> {
       )
     })
   }
+  initFirebase = () => {
+    const { id } = this.props
+    firebase.initializeApp({
+      apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
+      authDomain: 'oncechat-22dac.firebaseapp.com',
+      databaseURL: 'https://oncechat-22dac.firebaseio.com',
+      projectId: 'oncechat-22dac',
+      storageBucket: 'oncechat-22dac.appspot.com',
+      messagingSenderId: '250112620252'
+    })
+    this.database = firebase.database()
+
+    // Commands
+    this.database.ref(`chats/${id}/command`).on('value', snapshot => {
+      console.log(snapshot.val())
+      if (snapshot.val()) {
+        switch (snapshot.val().value) {
+          case 'destroy':
+            Router.push({
+              pathname: '/destroy'
+              // query: { id: this.props.id }
+            })
+            this.database.ref(`chats/${this.props.id}`).remove()
+            console.log('destroyed!')
+            break
+          // no default
+        }
+      }
+    })
+
+    this.database
+      .ref(`chats/${id}/connections/${this.username}`)
+      .onDisconnect()
+      .remove()
+    this.database.ref(`chats/${id}/connections/${this.username}`).set({
+      value: true
+    })
+    this.database.ref(`chats/${id}/aliases/${this.username}`).set({
+      value: this.username
+    })
+    this.database.ref(`chats/${id}/chat`).on('value', snapshot => {
+      this.setState({ messages: snapshot.val() })
+    })
+    this.database.ref(`chats/${id}/aliases/`).on('value', snapshot => {
+      if (snapshot.val()) {
+        this.setState({ aliases: snapshot.val() })
+      }
+    })
+    this.database.ref(`chats/${id}/lifetime`).on('value', snapshot => {
+      if (snapshot.val()) {
+        clearInterval(this.state.remainingTimeInterval)
+        this.setState(
+          { remainingTime: snapshot.val(), didSetLifetime: true },
+          this.updateRemainingTime
+        )
+      }
+    })
+  }
+  updateRemainingTime = () => {
+    setInterval(() => {
+      this.setState(({ remainingTime, id }) => {
+        if (remainingTime - 1000 <= 0) {
+          console.log('destroy!')
+          this.database.ref(`chats/${id}/command`).set({
+            value: 'destroy'
+          })
+          return {}
+        }
+        return {
+          remainingTime: remainingTime - 1000
+        }
+      })
+    }, 1000)
+  }
   render () {
     const {
-      database,
       handleUsernameSubmit,
       handleChange,
       handleSubmit,
@@ -216,75 +197,78 @@ class Home extends Component<HomeProps> {
       handleCommand,
       nacl
     } = this
-    const { id, url } = this.props
+    const { url } = this.props
     const { aliases, messages, inputVal, status } = this.state
     return (
-      <div className='app'>
-        <ChatWindow
-          {...{
-            aliases,
-            messages,
-            nacl,
-            handleChange,
-            handleSubmit,
-            inputVal,
-            username,
-            status
-          }}
-        />
-        <style jsx global>
-          {appStyles}
-        </style>
-        <style jsx>{actionsStyles}</style>
-        <section className='actions'>
-          <h2>Actions</h2>
-          <a className='action button' href='/'>
-            Start a new chat
-          </a>
-          <button
-            className='action button'
-            onClick={e => handleCommand(e, 'destroy')}
-          >
-            Destroy this chat
-          </button>
-          {/* {database && (
-            <Destroyer
-              href="/destroy"
-              dbRef={database.ref(`chats/${id}`)}
-              nextID={uniqueString()}
-            />
-          )} */}
-          <form className='action' onSubmit={e => e.preventDefault()}>
-            <label className='linkDisplay'>
-              Your link is <code>{url.asPath}</code>
-            </label>
-            <button className='button'>Click to copy</button>
-          </form>
-          {!aliases[username] ||
-            (aliases[username].value === username && (
-              <form className='action' onSubmit={handleUsernameSubmit}>
-                <div className='userNameFields'>
-                  <label>
-                    Your username is:{' '}
-                    <input
-                      ref={input => {
-                        this.usernameInput = input
-                      }}
-                      className='userNameInput'
-                      placeholder={this.state.username}
-                      onChange={e => handleChange(e, 'username')}
-                    />
-                  </label>
-                  <p className='userNameNote'>
-                    You may change it, but only once.
-                  </p>
-                </div>
-                <button className='button'>Change username</button>
-              </form>
-            ))}
-          <p>This chat will be destroyed in {this.state.remainingTime}</p>
-        </section>
-      </div>
+      <SiteWrap>
+        <h1>chat.once</h1>
+        <div>
+          <ChatWindow
+            {...{
+              aliases,
+              messages,
+              nacl,
+              handleChange,
+              handleSubmit,
+              inputVal,
+              username,
+              status
+            }}
+          />
+          <style jsx global>
+            {appStyles}
+          </style>
+          <style jsx>{actionsStyles}</style>
+          <section className='actions'>
+            <h2>Actions</h2>
+            <a className='action button' href='/'>
+              Start a new chat
+            </a>
+            <button
+              className='action button'
+              onClick={e => handleCommand(e, 'destroy')}
+            >
+              Destroy this chat
+            </button>
+            {/* {database && (
+              <Destroyer
+                href="/destroy"
+                dbRef={database.ref(`chats/${id}`)}
+                nextID={uniqueString()}
+              />
+            )} */}
+            <form className='action' onSubmit={e => e.preventDefault()}>
+              <button className='button'>Click to copy chat url</button>
+            </form>
+            {!aliases[username] ||
+              (aliases[username].value === username && (
+                <form className='action' onSubmit={handleUsernameSubmit}>
+                  <div className='userNameFields'>
+                    <label>
+                      Your username is:{' '}
+                      <input
+                        ref={input => {
+                          this.usernameInput = input
+                        }}
+                        className='userNameInput'
+                        placeholder={this.state.username}
+                        onChange={e => handleChange(e, 'username')}
+                      />
+                    </label>
+                    <p className='userNameNote'>
+                      You may change it, but only once.
+                    </p>
+                  </div>
+                  <button className='button'>Change username</button>
+                </form>
+              ))}
+            <p>
+              This chat will be destroyed in {this.state.remainingTime / 1000}{' '}
+              seconds.
+            </p>
+          </section>
+        </div>
+      </SiteWrap>
     )
   }
 }

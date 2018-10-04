@@ -3,5 +3,8 @@
   "extends": ["standard", "standard-react", "plugin:flowtype/recommended"],
   "plugins": [
     "flowtype"
-  ]
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": false
+  }
 }

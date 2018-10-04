@@ -1,4 +1,4 @@
-import css from "styled-jsx/css";
+import css from 'styled-jsx/css'
 
 const appStyles = css`
   :root {
@@ -15,7 +15,7 @@ const appStyles = css`
     background-color: var(--veryLightYellow);
     margin: 0;
   }
-`;
+`
 
 const actionsStyles = css`
   .action {
@@ -63,16 +63,16 @@ const actionsStyles = css`
     color: var(--brown);
     margin: 5px 0 20px;
   }
-`;
+`
 
 const chatWindowStyles = css`
   .chatWindow {
-    justify-content: flex-end;
+    ${'' /* justify-content: flex-end;
     display: flex;
     font-size: var(--baseFontSize);
     flex-direction: column;
     height: 90vh;
-    margin: 0 auto 10vh;
+    margin: 0 auto 10vh; */};
   }
   .input {
     background-color: var(--veryLightYellow);
@@ -94,7 +94,7 @@ const chatWindowStyles = css`
   .noMessages {
     color: var(--brown);
   }
-`;
+`
 
 const msgContainerStyles = css`
   @keyframes new {
@@ -115,7 +115,7 @@ const msgContainerStyles = css`
     align-self: center;
     animation: new 0.5s forwards;
     border-radius: 50%;
-    content: "";
+    content: '';
     display: inline-block;
     width: 10px;
     height: 10px;
@@ -127,6 +127,6 @@ const msgContainerStyles = css`
     margin-left: 10px;
     max-width: 300px;
   }
-`;
+`
 
-export { actionsStyles, appStyles, chatWindowStyles, msgContainerStyles };
+export { actionsStyles, appStyles, chatWindowStyles, msgContainerStyles }
