@@ -20,17 +20,14 @@ type HomeProps = {
 
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
-    const lifetime = 10000
     if (query) {
       const id = escape(query.id) || uniqueString()
-      const remainingTime = parseInt(query.lifetime, 10) || lifetime
       setTimeout(() => {
         axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)
-      }, lifetime)
+      }, this.lifetime)
       return {
         id,
-        isNew: !query.id,
-        remainingTime
+        isNew: !query.id
       }
     }
     return {}
@@ -43,10 +40,7 @@ class Home extends Component<HomeProps> {
       messages: {},
       username: this.username,
       aliases: { [this.username]: { value: this.username } },
-      status: 'ready',
-      remainingTime: this.props.remainingTime,
-      didSetLifetime: false,
-      remainingTimeInterval: null
+      status: 'ready'
     }
   }
   componentDidMount () {
@@ -62,8 +56,8 @@ class Home extends Component<HomeProps> {
         query: { id }
       })
     }
-    this.setState({ remainingTimeInterval: this.updateRemainingTime() })
   }
+  lifetime = 1000 * 60 * 60
   handleChange = (e, inputCase = 'message') => {
     switch (inputCase) {
       case 'message':
@@ -167,31 +161,6 @@ class Home extends Component<HomeProps> {
         this.setState({ aliases: snapshot.val() })
       }
     })
-    this.database.ref(`chats/${id}/lifetime`).on('value', snapshot => {
-      if (snapshot.val()) {
-        clearInterval(this.state.remainingTimeInterval)
-        this.setState(
-          { remainingTime: snapshot.val(), didSetLifetime: true },
-          this.updateRemainingTime
-        )
-      }
-    })
-  }
-  updateRemainingTime = () => {
-    setInterval(() => {
-      this.setState(({ remainingTime, id }) => {
-        if (remainingTime - 1000 <= 0) {
-          console.log('destroy!')
-          this.database.ref(`chats/${id}/command`).set({
-            value: 'destroy'
-          })
-          return {}
-        }
-        return {
-          remainingTime: remainingTime - 1000
-        }
-      })
-    }, 1000)
   }
   render () {
     const {
@@ -202,10 +171,12 @@ class Home extends Component<HomeProps> {
       handleCommand,
       nacl
     } = this
-    const { url } = this.props
     const { aliases, messages, inputVal, status } = this.state
     return (
       <SiteWrap>
+        <style jsx global>
+          {appStyles}
+        </style>
         <h1>chat.once</h1>
         <div>
           <ChatWindow
@@ -220,9 +191,7 @@ class Home extends Component<HomeProps> {
               status
             }}
           />
-          <style jsx global>
-            {appStyles}
-          </style>
+
           <style jsx>{actionsStyles}</style>
           <section className='actions'>
             <h2>Actions</h2>
@@ -235,13 +204,6 @@ class Home extends Component<HomeProps> {
             >
               Destroy this chat
             </button>
-            {/* {database && (
-              <Destroyer
-                href="/destroy"
-                dbRef={database.ref(`chats/${id}`)}
-                nextID={uniqueString()}
-              />
-            )} */}
             <form className='action' onSubmit={e => e.preventDefault()}>
               <button className='button'>Click to copy chat url</button>
             </form>
@@ -267,12 +229,13 @@ class Home extends Component<HomeProps> {
                   <button className='button'>Change username</button>
                 </form>
               ))}
-            <p>
-              This chat will be destroyed in {this.state.remainingTime / 1000}{' '}
-              seconds.
-            </p>
           </section>
         </div>
+        <small>
+          <ul>
+            <li>All chats are destroyed within on hour of their creation.</li>
+          </ul>
+        </small>
       </SiteWrap>
     )
   }
