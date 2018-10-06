@@ -1,19 +1,53 @@
 import css from 'styled-jsx/css'
 
 const appStyles = css`
-  :root {
+  :global(:root) {
     --baseFontSize: 20px;
+    --black: #222;
     --darkGray: #444;
     --brown: #91847a;
     --tomato: tomato;
     --veryLightYellow: #fcfbf2;
   }
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    background-color: var(--veryLightYellow);
+  :global(body) {
     margin: 0;
+  }
+  @keyframes blink {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  .app {
+    background-color: var(--veryLightYellow);
+    border: 20px double var(--black);
+    font-family: monospace;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    box-sizing: border-box;
+    display: grid;
+    font-family: monospace;
+    line-height: 1.3;
+    height: 100vh;
+    padding: 5vmin;
+  }
+  .app *,
+  .app *::before,
+  .app *::after {
+    box-sizing: inherit;
+  }
+  h1 {
+    grid-column: 1/3;
+    grid-row: 1/2;
+    margin: 0;
+  }
+  .dot {
+    animation: blink 3s linear infinite;
   }
 `
 
@@ -25,10 +59,6 @@ const actionsStyles = css`
     align-items: flex-start;
     display: flex;
     flex-direction: column;
-  }
-  .app {
-    display: flex;
-    font-family: monospace;
   }
   .button {
     appearance: none;
@@ -58,7 +88,6 @@ const actionsStyles = css`
     font-size: 18px;
     font-family: monospace;
   }
-
   .userNameNote {
     color: var(--brown);
     margin: 5px 0 20px;
@@ -67,6 +96,12 @@ const actionsStyles = css`
 
 const chatWindowStyles = css`
   .chatWindow {
+    align-content: flex-end;
+    display: flex;
+    flex-direction: column;
+    grid-column: 1/3;
+    grid-row: 2/5;
+    margin-right: 40px;
     ${'' /* justify-content: flex-end;
     display: flex;
     font-size: var(--baseFontSize);
@@ -77,16 +112,26 @@ const chatWindowStyles = css`
   .input {
     background-color: var(--veryLightYellow);
     border: 0;
-    border-bottom: 3px solid #21b6c4;
+    box-sizing: border-box;
+    ${''} border: 1px solid black;
     font-family: monospace;
     font-size: var(--baseFontSize);
     height: 40px;
     margin: 0;
     padding: 0 10px;
-  }
-  .input:focus {
-    outline: 0;
     width: 100%;
+  }
+  .label {
+    display: block;
+    font-style: italic;
+  }
+  .labelActiveText {
+    opacity: 0.5;
+  }
+  .messages,
+  .noMessages {
+    margin-bottom: 20px;
+    margin-top: auto;
   }
   .messages {
     overflow: scroll;
@@ -120,6 +165,7 @@ const msgContainerStyles = css`
     width: 10px;
     height: 10px;
     margin-right: 10px;
+    margin-left: -20px;
     background-color: tomato;
   }
   .message {

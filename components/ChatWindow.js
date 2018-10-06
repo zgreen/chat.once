@@ -22,8 +22,7 @@ const Message = ({
   return (
     <p className='container' key={msgKey}>
       <style jsx>{msgContainerStyles}</style>
-      {alias && <em className='alias'>{alias.value}</em>}
-      {`: `}
+      {alias && <em className='alias'>{alias.value}: </em>}
       <span className='message'>{msg}</span>
     </p>
   )
@@ -77,6 +76,11 @@ class ChatWindow extends Component<ChatWindowProps> {
           )}
         </div>
         <form className='form' onSubmit={handleSubmit}>
+          <label
+            className={`label ${inputVal.length ? 'labelActiveText' : ''}`}
+          >
+            Type something &#9660;
+          </label>
           <input
             className='input'
             style={isPending ? { borderBottomColor: '#111' } : {}}

@@ -1,40 +1,46 @@
 // @flow
 import 'firebase/database'
 import axios from 'axios'
+import Chance from 'chance'
 import React, { Component } from 'react'
 import Router from 'next/router'
 import uniqueString from 'unique-string'
 import escape from 'lodash.escape'
 import * as firebase from 'firebase'
 import naclFactory from 'js-nacl'
+import Aside from '../components/Aside'
 import ChatWindow from '../components/ChatWindow'
-import Destroyer from '../components/Destroyer'
 import { actionsStyles, appStyles } from '../components/styles'
 import SiteWrap from '../components/SiteWrap'
+
+const chance = new Chance()
 
 type HomeProps = {
   id: String,
   isNew: Boolean,
+  lifetime: number,
   url: Object
 }
 
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
+    const lifetime = 1000 * 60 * 60
     if (query) {
-      const id = escape(query.id) || uniqueString()
+      const id = escape(query.id) || Date.now() + uniqueString()
       setTimeout(() => {
         axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)
-      }, this.lifetime)
+      }, lifetime)
       return {
         id,
-        isNew: !query.id
+        isNew: !query.id,
+        lifetime
       }
     }
     return {}
   }
   constructor (props) {
     super(props)
-    this.username = uniqueString()
+    this.username = chance.name()
     this.state = {
       inputVal: '',
       messages: {},
@@ -44,7 +50,7 @@ class Home extends Component<HomeProps> {
     }
   }
   componentDidMount () {
-    const { id, isNew } = this.props
+    const { id, isNew, lifetime } = this.props
     this.initFirebase()
     naclFactory.instantiate(nacl => {
       this.nacl = nacl
@@ -56,8 +62,12 @@ class Home extends Component<HomeProps> {
         query: { id }
       })
     }
+    setTimeout(() => {
+      Router.push({
+        pathname: '/destroy'
+      })
+    }, lifetime)
   }
-  lifetime = 1000 * 60 * 60
   handleChange = (e, inputCase = 'message') => {
     switch (inputCase) {
       case 'message':
@@ -78,10 +88,6 @@ class Home extends Component<HomeProps> {
   }
   handleUsernameSubmit = e => {
     e.preventDefault()
-    if (this.state.username === this.username) {
-      this.usernameInput.focus()
-      return
-    }
     this.database
       .ref('chats/' + this.props.id + `/aliases/${this.username}`)
       .set({
@@ -90,23 +96,25 @@ class Home extends Component<HomeProps> {
   }
   handleSubmit = e => {
     e.preventDefault()
-    const { nacl } = this
+    const { database, keyPair, nacl, username } = this
+    const { id } = this.props
+    const { inputVal } = this.state
     if (!nacl) {
       window.alert(`This message could not be signed, and wasn't sent.`)
       return
     }
+    if (inputVal.trim().length === 0) {
+      return
+    }
     this.setState({ status: 'pending' }, () => {
-      this.database.ref(`chats/${this.props.id}/chat`).push(
+      database.ref(`chats/${id}/chat`).push(
         {
           value: {
-            username: this.username,
+            username: username,
             message: nacl.to_hex(
-              nacl.crypto_sign(
-                nacl.encode_utf8(this.state.inputVal),
-                this.keyPair.signSk
-              )
+              nacl.crypto_sign(nacl.encode_utf8(inputVal), keyPair.signSk)
             ),
-            publicKey: this.keyPair.signPk
+            publicKey: keyPair.signPk
           }
         },
         () => this.setState({ inputVal: '', status: 'ready' })
@@ -133,9 +141,8 @@ class Home extends Component<HomeProps> {
           case 'destroy':
             Router.push({
               pathname: '/destroy'
-              // query: { id: this.props.id }
             })
-            this.database.ref(`chats/${this.props.id}`).remove()
+            this.database.ref(`chats/${id}`).remove()
             console.log('destroyed!')
             break
           // no default
@@ -174,68 +181,27 @@ class Home extends Component<HomeProps> {
     const { aliases, messages, inputVal, status } = this.state
     return (
       <SiteWrap>
-        <style jsx global>
-          {appStyles}
-        </style>
-        <h1>chat.once</h1>
-        <div>
-          <ChatWindow
-            {...{
-              aliases,
-              messages,
-              nacl,
-              handleChange,
-              handleSubmit,
-              inputVal,
-              username,
-              status
-            }}
-          />
-
-          <style jsx>{actionsStyles}</style>
-          <section className='actions'>
-            <h2>Actions</h2>
-            <a className='action button' href='/'>
-              Start a new chat
-            </a>
-            <button
-              className='action button'
-              onClick={e => handleCommand(e, 'destroy')}
-            >
-              Destroy this chat
-            </button>
-            <form className='action' onSubmit={e => e.preventDefault()}>
-              <button className='button'>Click to copy chat url</button>
-            </form>
-            {!aliases[username] ||
-              (aliases[username].value === username && (
-                <form className='action' onSubmit={handleUsernameSubmit}>
-                  <div className='userNameFields'>
-                    <label>
-                      Your username is:{' '}
-                      <input
-                        ref={input => {
-                          this.usernameInput = input
-                        }}
-                        className='userNameInput'
-                        placeholder={this.state.username}
-                        onChange={e => handleChange(e, 'username')}
-                      />
-                    </label>
-                    <p className='userNameNote'>
-                      You may change it, but only once.
-                    </p>
-                  </div>
-                  <button className='button'>Change username</button>
-                </form>
-              ))}
-          </section>
-        </div>
-        <small>
-          <ul>
-            <li>All chats are destroyed within on hour of their creation.</li>
-          </ul>
-        </small>
+        <ChatWindow
+          {...{
+            aliases,
+            messages,
+            nacl,
+            handleChange,
+            handleSubmit,
+            inputVal,
+            username,
+            status
+          }}
+        />
+        <Aside
+          {...{
+            aliases,
+            handleChange,
+            handleCommand,
+            handleUsernameSubmit,
+            username
+          }}
+        />
       </SiteWrap>
     )
   }
