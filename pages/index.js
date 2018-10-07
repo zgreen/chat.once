@@ -2,8 +2,6 @@
 import 'firebase/database'
 import React, { Component } from 'react'
 import Router from 'next/router'
-import uniqueString from 'unique-string'
-import uuidv1 from 'uuid/v1'
 import escape from 'lodash.escape'
 import * as firebase from 'firebase'
 import naclFactory from 'js-nacl'
@@ -25,9 +23,10 @@ class Home extends Component<HomeProps> {
     if (query) {
       const axios = require('axios')
       const Chance = require('chance')
+      const uuidv4 = require('uuid/v4')
       const chance = new Chance()
-      const uuid = uuidv1()
-      const id = escape(query.id) || Date.now() + uniqueString()
+      const uuid = uuidv4()
+      const id = escape(query.id) || uuidv4()
       const username = chance.name()
       console.log('connection')
       setTimeout(() => {
@@ -58,6 +57,7 @@ class Home extends Component<HomeProps> {
       naclFactory.instantiate(nacl => {
         this.nacl = nacl
         this.keyPair = this.nacl.crypto_sign_keypair()
+        console.log(this.keyPair)
       })
     }
     if (isNew) {
@@ -100,6 +100,7 @@ class Home extends Component<HomeProps> {
   handleSubmit = e => {
     e.preventDefault()
     const { database, keyPair, nacl } = this
+    console.log(keyPair)
     const { id, username, uuid } = this.props
     const { inputVal } = this.state
     if (!nacl) {

@@ -10,7 +10,7 @@ const Message = ({
 }: {
   users: Object,
   messages: Object,
-  msgKey: String,
+  msgKey: string,
   nacl: Function
 }) => {
   const message = messages[msgKey]
@@ -36,7 +36,8 @@ const Message = ({
 
 type ChatWindowProps = {
   messages: Object,
-  status: String
+  status: string,
+  users: Object
 }
 
 class ChatWindow extends Component<ChatWindowProps> {
