@@ -14,6 +14,9 @@ export default () => (
       li {
         margin-bottom: 5px;
       }
+      ul {
+        padding: 0 0 0 10px;
+      }
     `}</style>
     <h3>About</h3>
     <ul>

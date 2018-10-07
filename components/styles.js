@@ -134,7 +134,8 @@ const chatWindowStyles = css`
     margin-top: auto;
   }
   .messages {
-    overflow: scroll;
+    overflow-x: visible;
+    overflow-y: scroll;
   }
   .noMessages {
     color: var(--brown);

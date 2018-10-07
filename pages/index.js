@@ -1,83 +1,81 @@
 // @flow
 import 'firebase/database'
-import axios from 'axios'
-import Chance from 'chance'
 import React, { Component } from 'react'
 import Router from 'next/router'
 import uniqueString from 'unique-string'
+import uuidv1 from 'uuid/v1'
 import escape from 'lodash.escape'
 import * as firebase from 'firebase'
 import naclFactory from 'js-nacl'
 import Aside from '../components/Aside'
 import ChatWindow from '../components/ChatWindow'
-import { actionsStyles, appStyles } from '../components/styles'
 import SiteWrap from '../components/SiteWrap'
-
-const chance = new Chance()
 
 type HomeProps = {
   id: String,
   isNew: Boolean,
   lifetime: number,
-  url: Object
+  username: string,
+  uuid: string
 }
 
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     const lifetime = 1000 * 60 * 60
     if (query) {
+      const axios = require('axios')
+      const Chance = require('chance')
+      const chance = new Chance()
+      const uuid = uuidv1()
       const id = escape(query.id) || Date.now() + uniqueString()
+      const username = chance.name()
+      console.log('connection')
       setTimeout(() => {
         axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)
       }, lifetime)
       return {
         id,
         isNew: !query.id,
-        lifetime
+        lifetime,
+        uuid,
+        username
       }
     }
     return {}
   }
-  constructor (props) {
-    super(props)
-    this.username = chance.name()
-    this.state = {
-      inputVal: '',
-      messages: {},
-      username: this.username,
-      aliases: { [this.username]: { value: this.username } },
-      status: 'ready'
-    }
+  state = {
+    inputVal: '',
+    messages: {},
+    alias: '',
+    aliasInput: '',
+    status: 'ready',
+    users: {}
   }
   componentDidMount () {
     const { id, isNew, lifetime } = this.props
-    this.initFirebase()
-    naclFactory.instantiate(nacl => {
-      this.nacl = nacl
-      this.keyPair = this.nacl.crypto_sign_keypair()
-    })
+    if (isNew || (!isNew && id)) {
+      this.initFirebase()
+      naclFactory.instantiate(nacl => {
+        this.nacl = nacl
+        this.keyPair = this.nacl.crypto_sign_keypair()
+      })
+    }
     if (isNew) {
       Router.push({
         pathname: '/',
         query: { id }
       })
+    } else {
+      this.handleUsernameSubmit()
+      setTimeout(() => {
+        Router.push({
+          pathname: '/destroy'
+        })
+      }, lifetime)
     }
-    setTimeout(() => {
-      Router.push({
-        pathname: '/destroy'
-      })
-    }, lifetime)
   }
-  handleChange = (e, inputCase = 'message') => {
-    switch (inputCase) {
-      case 'message':
-        this.setState({ inputVal: e.target.value })
-        break
-      case 'username':
-        this.setState({ username: e.target.value })
-        break
-      // no default
-    }
+  handleChange = (e, inputVal = 'inputVal') => {
+    this.setState({ [inputVal]: e.target.value })
   }
   handleCommand = (e = { preventDefault: () => null }, command = 'destroy') => {
     e.preventDefault()
@@ -86,18 +84,23 @@ class Home extends Component<HomeProps> {
       value: command
     })
   }
-  handleUsernameSubmit = e => {
+  handleUsernameSubmit = (e = { preventDefault: () => null }) => {
     e.preventDefault()
-    this.database
-      .ref('chats/' + this.props.id + `/aliases/${this.username}`)
-      .set({
-        value: this.state.username
-      })
+    const { aliasInput: alias } = this.state
+    const { id, username, uuid } = this.props
+    console.log(uuid, username)
+    this.database.ref(`chats/${id}/users/${uuid}`).set({
+      value: {
+        alias,
+        username,
+        uuid
+      }
+    })
   }
   handleSubmit = e => {
     e.preventDefault()
-    const { database, keyPair, nacl, username } = this
-    const { id } = this.props
+    const { database, keyPair, nacl } = this
+    const { id, username, uuid } = this.props
     const { inputVal } = this.state
     if (!nacl) {
       window.alert(`This message could not be signed, and wasn't sent.`)
@@ -110,7 +113,8 @@ class Home extends Component<HomeProps> {
       database.ref(`chats/${id}/chat`).push(
         {
           value: {
-            username: username,
+            username,
+            uuid,
             message: nacl.to_hex(
               nacl.crypto_sign(nacl.encode_utf8(inputVal), keyPair.signSk)
             ),
@@ -122,7 +126,7 @@ class Home extends Component<HomeProps> {
     })
   }
   initFirebase = () => {
-    const { id } = this.props
+    const { id, uuid } = this.props
     firebase.initializeApp({
       apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
       authDomain: 'oncechat-22dac.firebaseapp.com',
@@ -135,7 +139,6 @@ class Home extends Component<HomeProps> {
 
     // Commands
     this.database.ref(`chats/${id}/command`).on('value', snapshot => {
-      console.log(snapshot.val())
       if (snapshot.val()) {
         switch (snapshot.val().value) {
           case 'destroy':
@@ -143,29 +146,27 @@ class Home extends Component<HomeProps> {
               pathname: '/destroy'
             })
             this.database.ref(`chats/${id}`).remove()
-            console.log('destroyed!')
             break
           // no default
         }
       }
     })
 
-    this.database
-      .ref(`chats/${id}/connections/${this.username}`)
-      .onDisconnect()
-      .remove()
-    this.database.ref(`chats/${id}/connections/${this.username}`).set({
-      value: true
-    })
-    this.database.ref(`chats/${id}/aliases/${this.username}`).set({
-      value: this.username
-    })
     this.database.ref(`chats/${id}/chat`).on('value', snapshot => {
       this.setState({ messages: snapshot.val() })
     })
-    this.database.ref(`chats/${id}/aliases/`).on('value', snapshot => {
-      if (snapshot.val()) {
-        this.setState({ aliases: snapshot.val() })
+    this.database.ref(`chats/${id}/users`).on('value', snapshot => {
+      const users = snapshot.val()
+      console.log('users', users)
+      if (users) {
+        this.setState({
+          users,
+          alias: Object.keys(users).reduce(
+            (acc, key) =>
+              acc === '' && users[key].uuid === uuid ? users[key].alias : '',
+            ''
+          )
+        })
       }
     })
   }
@@ -174,32 +175,36 @@ class Home extends Component<HomeProps> {
       handleUsernameSubmit,
       handleChange,
       handleSubmit,
-      username,
       handleCommand,
       nacl
     } = this
-    const { aliases, messages, inputVal, status } = this.state
+    const { username, uuid } = this.props
+    const { alias, users, messages, inputVal, status } = this.state
     return (
       <SiteWrap>
         <ChatWindow
           {...{
-            aliases,
+            alias,
+            users,
             messages,
             nacl,
             handleChange,
             handleSubmit,
             inputVal,
             username,
-            status
+            status,
+            uuid
           }}
         />
         <Aside
           {...{
-            aliases,
+            alias,
+            users,
             handleChange,
             handleCommand,
             handleUsernameSubmit,
-            username
+            username,
+            uuid
           }}
         />
       </SiteWrap>

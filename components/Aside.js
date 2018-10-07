@@ -1,3 +1,4 @@
+// @flow
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import About from './About'
 
@@ -14,11 +15,21 @@ const Break = () => (
   </div>
 )
 export default ({
-  aliases,
+  alias,
+  users,
   handleChange,
   handleCommand,
   handleUsernameSubmit,
-  username
+  username,
+  uuid
+}: {
+  alias: string,
+  users: Object,
+  handleChange: Function,
+  handleCommand: Function,
+  handleUsernameSubmit: Function,
+  username: string,
+  uuid: string
 }) => (
   <aside>
     <style jsx>{`
@@ -102,28 +113,27 @@ export default ({
         </CopyToClipboard>
       </div>
       <Break />
-      {!aliases[username] ||
-        (aliases[username].value === username && (
-          <form onSubmit={handleUsernameSubmit}>
-            <div className='userNameFields'>
-              <p>
-                Your random username is: <strong>{username}</strong>
-              </p>
-              <label className='userNameNote'>
-                <p>You may change it, but only once.</p>
-                <div className='usernameWrapper'>
-                  <input
-                    className='userNameInput'
-                    placeholder='Enter new username'
-                    onChange={e => handleChange(e, 'username')}
-                  />
-                  <button className='action button'>Change username</button>
-                </div>
-              </label>
-            </div>
-            <Break />
-          </form>
-        ))}
+      {alias.length === 0 && (
+        <form onSubmit={handleUsernameSubmit}>
+          <div className='userNameFields'>
+            <p>
+              Your random username is: <strong>{username}</strong>
+            </p>
+            <label className='userNameNote'>
+              <p>You may change it, but only once.</p>
+              <div className='usernameWrapper'>
+                <input
+                  className='userNameInput'
+                  placeholder='Enter new username'
+                  onChange={e => handleChange(e, 'aliasInput')}
+                />
+                <button className='action button'>Change username</button>
+              </div>
+            </label>
+          </div>
+          <Break />
+        </form>
+      )}
     </section>
     <About />
   </aside>

@@ -27,7 +27,8 @@
     "safe-buffer": "^5.1.1",
     "tweetnacl": "^1.0.0",
     "tweetnacl-util": "^0.15.0",
-    "unique-string": "^1.0.0"
+    "unique-string": "^1.0.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@babel/preset-flow": "^7.0.0-beta.47",

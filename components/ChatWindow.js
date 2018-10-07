@@ -3,26 +3,32 @@ import React, { Component } from 'react'
 import { chatWindowStyles, msgContainerStyles } from './styles'
 
 const Message = ({
-  aliases,
+  users,
   messages,
   msgKey,
   nacl
 }: {
-  aliases: Object,
+  users: Object,
   messages: Object,
   msgKey: String,
   nacl: Function
 }) => {
   const message = messages[msgKey]
-  const alias = aliases[message.value.username]
+  const matchedUser = Object.keys(users)
+    .map(key => users[key])
+    .find(user => user.value.uuid === message.value.uuid)
+  const name =
+    matchedUser && matchedUser.value.alias.length
+      ? matchedUser.value.alias
+      : message.value.username
   const { publicKey } = message.value
   const msg = nacl.decode_utf8(
     nacl.crypto_sign_open(nacl.from_hex(message.value.message), publicKey)
   )
   return (
-    <p className='container' key={msgKey}>
+    <p className='container'>
       <style jsx>{msgContainerStyles}</style>
-      {alias && <em className='alias'>{alias.value}: </em>}
+      {name && <em className='alias'>{name}: </em>}
       <span className='message'>{msg}</span>
     </p>
   )
@@ -47,7 +53,7 @@ class ChatWindow extends Component<ChatWindowProps> {
   }
   render () {
     const {
-      aliases,
+      users,
       messages,
       nacl,
       handleChange,
@@ -67,7 +73,7 @@ class ChatWindow extends Component<ChatWindowProps> {
         >
           {messages ? (
             Object.keys(messages).map((msgKey, idx, arr) => (
-              <Message {...{ aliases, msgKey, messages, nacl, key: msgKey }} />
+              <Message {...{ users, msgKey, messages, nacl, key: msgKey }} />
             ))
           ) : (
             <p className='noMessages'>
