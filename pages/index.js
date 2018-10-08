@@ -7,6 +7,7 @@ import * as firebase from 'firebase'
 import naclFactory from 'js-nacl'
 import Aside from '../components/Aside'
 import ChatWindow from '../components/ChatWindow'
+import Loading from '../components/Loading'
 import SiteWrap from '../components/SiteWrap'
 
 type HomeProps = {
@@ -55,7 +56,10 @@ class Home extends Component<HomeProps> {
     users: {}
   }
   componentDidCatch (err) {
-    console.log('err', err)
+    console.error(err)
+    Router.push({
+      pathname: '/error'
+    })
   }
   componentDidMount () {
     console.log('componentDidMount')
@@ -90,7 +94,7 @@ class Home extends Component<HomeProps> {
     e.preventDefault()
     const { aliasInput: alias } = this.state
     const { id, username, uuid } = this.props
-    console.log(uuid, username)
+    console.log('submitting username')
     this.database.ref(`chats/${id}/users/${uuid}`).set({
       value: {
         alias,
@@ -116,13 +120,6 @@ class Home extends Component<HomeProps> {
     this.setState({ status: 'pending' }, () => {
       const { users } = this.state
       const nonce = nacl.crypto_box_random_nonce()
-      // console.log(
-      //   'STUFF',
-      //   nacl.encode_utf8(inputVal),
-      //   nonce,
-      //   // users[key].boxPk,
-      //   keyPair.boxSk
-      // )
       database.ref(`chats/${id}/chat`).push(
         {
           value: {
@@ -135,7 +132,7 @@ class Home extends Component<HomeProps> {
             packets: Object.keys(users).map(key => {
               console.log('USER', users[key])
               return {
-                user: users[key],
+                uuid: users[key].value.uuid,
                 packet: nacl.crypto_box(
                   nacl.encode_utf8(inputVal),
                   nonce,
@@ -205,38 +202,41 @@ class Home extends Component<HomeProps> {
       nacl
     } = this
     const { username, uuid } = this.props
-    console.log('props', this.props)
     const { alias, users, messages, inputVal, status } = this.state
     return (
       <SiteWrap>
-        {this.keyPair && Object.keys(users).length > 0 ? (
-          <ChatWindow
-            {...{
-              alias,
-              boxSk: this.keyPair.boxSk,
-              users,
-              messages,
-              nacl,
-              handleChange,
-              handleSubmit,
-              inputVal,
-              username,
-              status,
-              uuid
-            }}
-          />
-        ) : null}
-        <Aside
-          {...{
-            alias,
-            users,
-            handleChange,
-            handleCommand,
-            handleUsernameSubmit,
-            username,
-            uuid
-          }}
-        />
+        {this.keyPair && Object.keys(users).find(key => users[key].value.uuid === uuid) ? (
+          <React.Fragment>
+            <ChatWindow
+              {...{
+                alias,
+                boxSk: this.keyPair.boxSk,
+                users,
+                messages,
+                nacl,
+                handleChange,
+                handleSubmit,
+                inputVal,
+                username,
+                status,
+                uuid
+              }}
+            />
+            <Aside
+              {...{
+                alias,
+                users,
+                handleChange,
+                handleCommand,
+                handleUsernameSubmit,
+                username,
+                uuid
+              }}
+            />
+          </React.Fragment>
+        ) : (
+          <Loading />
+        )}
       </SiteWrap>
     )
   }

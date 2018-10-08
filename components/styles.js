@@ -121,6 +121,9 @@ const chatWindowStyles = css`
     padding: 0 10px;
     width: 100%;
   }
+  .input:disabled {
+    opacity: 0.5;
+  }
   .label {
     display: block;
     font-style: italic;

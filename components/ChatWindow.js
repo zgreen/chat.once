@@ -1,18 +1,34 @@
 // @flow
 import React, { Component } from 'react'
+import Router from 'next/router'
 import { chatWindowStyles, msgContainerStyles } from './styles'
+
+const Waiting = ({ isReady }: { isReady: boolean }) =>
+  isReady ? (
+    <p className='noMessages'>
+      <em>The chat is ready! But no one has written anything.</em>
+    </p>
+  ) : (
+    <p>
+      <strong>
+        You're the only one here. Invite someone to start chatting.
+      </strong>
+    </p>
+  )
 
 const Message = ({
   boxSk,
   users,
   messages,
   msgKey,
-  nacl
+  nacl,
+  uuid
 }: {
   users: Object,
   messages: Object,
   msgKey: string,
-  nacl: Function
+  nacl: Function,
+  uuid: string
 }) => {
   const message = messages[msgKey]
   const matchedUser = Object.keys(users)
@@ -22,19 +38,13 @@ const Message = ({
     matchedUser && matchedUser.value.alias.length
       ? matchedUser.value.alias
       : message.value.username
-  // const { publicKey } = message.value
-  // const msg = nacl.decode_utf8(
-  //   nacl.crypto_sign_open(nacl.from_hex(message.value.message), publicKey)
-  // )
-  console.log('boxSk!', boxSk)
-  console.log('message!', message.value)
-  console.log('packets!', message.value.packets)
   const packetMatch = message.value.packets.find(packet => {
-    console.log('pkt', packet.user.value.uuid, message.uuid)
-    return message.value && packet.user.value.uuid === message.value.uuid
+    return message.value && packet.uuid === uuid
   })
-  if (!packetMatch) {
-    return
+  if (typeof packetMatch === 'undefined') {
+    Router.push({
+      pathname: '/error'
+    })
   }
   const msg = nacl.decode_utf8(
     nacl.crypto_box_open(
@@ -44,7 +54,6 @@ const Message = ({
       boxSk
     )
   )
-  console.log('MSG', msg)
   return (
     <p className='container'>
       <style jsx>{msgContainerStyles}</style>
@@ -55,9 +64,14 @@ const Message = ({
 }
 
 type ChatWindowProps = {
+  handleChange: Function,
+  handleSubmit: Function,
+  inputVal: string,
   messages: Object,
+  nacl: Object,
   status: string,
-  users: Object
+  users: Object,
+  uuid: string
 }
 
 class ChatWindow extends Component<ChatWindowProps> {
@@ -81,9 +95,11 @@ class ChatWindow extends Component<ChatWindowProps> {
       handleChange,
       handleSubmit,
       inputVal,
-      status
+      status,
+      uuid
     } = this.props
     const isPending = status === 'pending'
+    const isReady = Object.keys(users).length > 1
     return (
       <div className='chatWindow'>
         <style jsx>{chatWindowStyles}</style>
@@ -96,13 +112,11 @@ class ChatWindow extends Component<ChatWindowProps> {
           {messages ? (
             Object.keys(messages).map((msgKey, idx, arr) => (
               <Message
-                {...{ boxSk, users, msgKey, messages, nacl, key: msgKey }}
+                {...{ boxSk, users, msgKey, messages, nacl, key: msgKey, uuid }}
               />
             ))
           ) : (
-            <p className='noMessages'>
-              <em>No one has written anything.</em>
-            </p>
+            <Waiting {...{ isReady }} />
           )}
         </div>
         <form className='form' onSubmit={handleSubmit}>
@@ -114,9 +128,10 @@ class ChatWindow extends Component<ChatWindowProps> {
           <input
             className='input'
             style={isPending ? { borderBottomColor: '#111' } : {}}
-            disabled={isPending}
+            disabled={!isReady || isPending}
             value={inputVal}
             onChange={handleChange}
+            placeholder={!isReady ? 'Add a person to start chatting.' : ''}
           />
         </form>
       </div>
