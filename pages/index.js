@@ -20,7 +20,8 @@ type HomeProps = {
 class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     const lifetime = 1000 * 60 * 60
-    if (query) {
+    if (req) {
+      console.log(query)
       const axios = require('axios')
       const Chance = require('chance')
       const uuidv4 = require('uuid/v4')
@@ -28,7 +29,6 @@ class Home extends Component<HomeProps> {
       const uuid = uuidv4()
       const id = escape(query.id) || uuidv4()
       const username = chance.name()
-      console.log('connection')
       setTimeout(() => {
         axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)
       }, lifetime)
@@ -42,6 +42,10 @@ class Home extends Component<HomeProps> {
     }
     return {}
   }
+  constructor (props) {
+    super(props)
+    console.log('props', props)
+  }
   state = {
     inputVal: '',
     messages: {},
@@ -50,29 +54,27 @@ class Home extends Component<HomeProps> {
     status: 'ready',
     users: {}
   }
+  componentDidCatch (err) {
+    console.log('err', err)
+  }
   componentDidMount () {
+    console.log('componentDidMount')
     const { id, isNew, lifetime } = this.props
-    if (isNew || (!isNew && id)) {
-      this.initFirebase()
-      naclFactory.instantiate(nacl => {
-        this.nacl = nacl
-        this.keyPair = this.nacl.crypto_sign_keypair()
-        console.log(this.keyPair)
-      })
-    }
+    this.initFirebase()
+    naclFactory.instantiate(nacl => {
+      this.nacl = nacl
+      this.keyPair = this.nacl.crypto_box_keypair()
+    })
     if (isNew) {
-      Router.push({
-        pathname: '/',
-        query: { id }
-      })
-    } else {
-      this.handleUsernameSubmit()
-      setTimeout(() => {
-        Router.push({
-          pathname: '/destroy'
-        })
-      }, lifetime)
+      console.log('is new!')
+      Router.push(`/?id=${id}`, `/?id=${id}`, { shallow: true })
     }
+    this.handleUsernameSubmit()
+    setTimeout(() => {
+      Router.push({
+        pathname: '/destroy'
+      })
+    }, lifetime)
   }
   handleChange = (e, inputVal = 'inputVal') => {
     this.setState({ [inputVal]: e.target.value })
@@ -93,7 +95,8 @@ class Home extends Component<HomeProps> {
       value: {
         alias,
         username,
-        uuid
+        uuid,
+        boxPk: this.keyPair.boxPk
       }
     })
   }
@@ -111,15 +114,37 @@ class Home extends Component<HomeProps> {
       return
     }
     this.setState({ status: 'pending' }, () => {
+      const { users } = this.state
+      const nonce = nacl.crypto_box_random_nonce()
+      // console.log(
+      //   'STUFF',
+      //   nacl.encode_utf8(inputVal),
+      //   nonce,
+      //   // users[key].boxPk,
+      //   keyPair.boxSk
+      // )
       database.ref(`chats/${id}/chat`).push(
         {
           value: {
             username,
             uuid,
-            message: nacl.to_hex(
-              nacl.crypto_sign(nacl.encode_utf8(inputVal), keyPair.signSk)
-            ),
-            publicKey: keyPair.signPk
+            // message: nacl.to_hex(
+            //   nacl.crypto_sign(nacl.encode_utf8(inputVal), keyPair.signSk)
+            // ),
+            nonce,
+            packets: Object.keys(users).map(key => {
+              console.log('USER', users[key])
+              return {
+                user: users[key],
+                packet: nacl.crypto_box(
+                  nacl.encode_utf8(inputVal),
+                  nonce,
+                  users[key].value.boxPk,
+                  keyPair.boxSk
+                )
+              }
+            }),
+            boxPk: keyPair.boxPk
           }
         },
         () => this.setState({ inputVal: '', status: 'ready' })
@@ -180,23 +205,27 @@ class Home extends Component<HomeProps> {
       nacl
     } = this
     const { username, uuid } = this.props
+    console.log('props', this.props)
     const { alias, users, messages, inputVal, status } = this.state
     return (
       <SiteWrap>
-        <ChatWindow
-          {...{
-            alias,
-            users,
-            messages,
-            nacl,
-            handleChange,
-            handleSubmit,
-            inputVal,
-            username,
-            status,
-            uuid
-          }}
-        />
+        {this.keyPair && Object.keys(users).length > 0 ? (
+          <ChatWindow
+            {...{
+              alias,
+              boxSk: this.keyPair.boxSk,
+              users,
+              messages,
+              nacl,
+              handleChange,
+              handleSubmit,
+              inputVal,
+              username,
+              status,
+              uuid
+            }}
+          />
+        ) : null}
         <Aside
           {...{
             alias,

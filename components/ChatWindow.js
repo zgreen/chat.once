@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { chatWindowStyles, msgContainerStyles } from './styles'
 
 const Message = ({
+  boxSk,
   users,
   messages,
   msgKey,
@@ -21,10 +22,29 @@ const Message = ({
     matchedUser && matchedUser.value.alias.length
       ? matchedUser.value.alias
       : message.value.username
-  const { publicKey } = message.value
+  // const { publicKey } = message.value
+  // const msg = nacl.decode_utf8(
+  //   nacl.crypto_sign_open(nacl.from_hex(message.value.message), publicKey)
+  // )
+  console.log('boxSk!', boxSk)
+  console.log('message!', message.value)
+  console.log('packets!', message.value.packets)
+  const packetMatch = message.value.packets.find(packet => {
+    console.log('pkt', packet.user.value.uuid, message.uuid)
+    return message.value && packet.user.value.uuid === message.value.uuid
+  })
+  if (!packetMatch) {
+    return
+  }
   const msg = nacl.decode_utf8(
-    nacl.crypto_sign_open(nacl.from_hex(message.value.message), publicKey)
+    nacl.crypto_box_open(
+      packetMatch.packet,
+      message.value.nonce,
+      message.value.boxPk,
+      boxSk
+    )
   )
+  console.log('MSG', msg)
   return (
     <p className='container'>
       <style jsx>{msgContainerStyles}</style>
@@ -54,6 +74,7 @@ class ChatWindow extends Component<ChatWindowProps> {
   }
   render () {
     const {
+      boxSk,
       users,
       messages,
       nacl,
@@ -74,7 +95,9 @@ class ChatWindow extends Component<ChatWindowProps> {
         >
           {messages ? (
             Object.keys(messages).map((msgKey, idx, arr) => (
-              <Message {...{ users, msgKey, messages, nacl, key: msgKey }} />
+              <Message
+                {...{ boxSk, users, msgKey, messages, nacl, key: msgKey }}
+              />
             ))
           ) : (
             <p className='noMessages'>
