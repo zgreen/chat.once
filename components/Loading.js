@@ -1,4 +1,4 @@
-export default () => (
+export default ({ isInvite }) => (
   <h2>
     <style jsx>{`
       @keyframes loading {
@@ -19,6 +19,7 @@ export default () => (
         margin-left: 10px;
       }
     `}</style>
+    {isInvite ? `You've been invited to an existing chat! ` : ''}
     Hang on, it's loading
     {` `}
     <div className='loading'>-</div>

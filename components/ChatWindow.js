@@ -43,7 +43,7 @@ const Message = ({
   })
   if (typeof packetMatch === 'undefined') {
     Router.push({
-      pathname: '/error'
+      pathname: '/nope'
     })
   }
   const msg = nacl.decode_utf8(

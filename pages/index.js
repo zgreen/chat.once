@@ -58,7 +58,7 @@ class Home extends Component<HomeProps> {
   componentDidCatch (err) {
     console.error(err)
     Router.push({
-      pathname: '/error'
+      pathname: '/nope'
     })
   }
   componentDidMount () {
@@ -125,9 +125,6 @@ class Home extends Component<HomeProps> {
           value: {
             username,
             uuid,
-            // message: nacl.to_hex(
-            //   nacl.crypto_sign(nacl.encode_utf8(inputVal), keyPair.signSk)
-            // ),
             nonce,
             packets: Object.keys(users).map(key => {
               console.log('USER', users[key])
@@ -180,13 +177,14 @@ class Home extends Component<HomeProps> {
     })
     this.database.ref(`chats/${id}/users`).on('value', snapshot => {
       const users = snapshot.val()
-      console.log('users', users)
       if (users) {
         this.setState({
           users,
           alias: Object.keys(users).reduce(
             (acc, key) =>
-              acc === '' && users[key].uuid === uuid ? users[key].alias : '',
+              acc === '' && users[key].value.uuid === uuid
+                ? users[key].value.alias
+                : '',
             ''
           )
         })
@@ -201,11 +199,14 @@ class Home extends Component<HomeProps> {
       handleCommand,
       nacl
     } = this
-    const { username, uuid } = this.props
+    const { id, username, uuid } = this.props
     const { alias, users, messages, inputVal, status } = this.state
+    const userRecordExists = Object.keys(users).find(
+      key => users[key].value.uuid === uuid
+    )
     return (
       <SiteWrap>
-        {this.keyPair && Object.keys(users).find(key => users[key].value.uuid === uuid) ? (
+        {this.keyPair && userRecordExists ? (
           <React.Fragment>
             <ChatWindow
               {...{

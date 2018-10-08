@@ -9,9 +9,9 @@ const Destroy = () => (
     `}</style>
     <div>
       <h2>Your chat was destroyed.</h2>
-      <Link href='/'>
-        <a>Start a new chat</a>
-      </Link>
+      <h3>
+        <a href='/'>Start a new chat</a>
+      </h3>
     </div>
   </SiteWrap>
 )
