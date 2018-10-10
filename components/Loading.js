@@ -1,4 +1,5 @@
-export default ({ isInvite }) => (
+// @flow
+export default ({ isInvite }: { isInvite: boolean }) => (
   <h2>
     <style jsx>{`
       @keyframes loading {

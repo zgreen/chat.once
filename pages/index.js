@@ -1,6 +1,6 @@
 // @flow
 import 'firebase/database'
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import Router from 'next/router'
 import escape from 'lodash.escape'
 import * as firebase from 'firebase'
@@ -22,7 +22,6 @@ class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     const lifetime = 1000 * 60 * 60
     if (req) {
-      console.log(query)
       const axios = require('axios')
       const Chance = require('chance')
       const uuidv4 = require('uuid/v4')
@@ -62,7 +61,6 @@ class Home extends Component<HomeProps> {
     })
   }
   componentDidMount () {
-    console.log('componentDidMount')
     const { id, isNew, lifetime } = this.props
     this.initFirebase()
     naclFactory.instantiate(nacl => {
@@ -94,7 +92,6 @@ class Home extends Component<HomeProps> {
     e.preventDefault()
     const { aliasInput: alias } = this.state
     const { id, username, uuid } = this.props
-    console.log('submitting username')
     this.database.ref(`chats/${id}/users/${uuid}`).set({
       value: {
         alias,
@@ -107,7 +104,6 @@ class Home extends Component<HomeProps> {
   handleSubmit = e => {
     e.preventDefault()
     const { database, keyPair, nacl } = this
-    console.log(keyPair)
     const { id, username, uuid } = this.props
     const { inputVal } = this.state
     if (!nacl) {
@@ -199,7 +195,7 @@ class Home extends Component<HomeProps> {
       handleCommand,
       nacl
     } = this
-    const { id, username, uuid } = this.props
+    const { username, uuid } = this.props
     const { alias, users, messages, inputVal, status } = this.state
     const userRecordExists = Object.keys(users).find(
       key => users[key].value.uuid === uuid
@@ -207,7 +203,7 @@ class Home extends Component<HomeProps> {
     return (
       <SiteWrap>
         {this.keyPair && userRecordExists ? (
-          <React.Fragment>
+          <Fragment>
             <ChatWindow
               {...{
                 alias,
@@ -234,7 +230,7 @@ class Home extends Component<HomeProps> {
                 uuid
               }}
             />
-          </React.Fragment>
+          </Fragment>
         ) : (
           <Loading />
         )}

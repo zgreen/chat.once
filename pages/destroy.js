@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import SiteWrap from '../components/SiteWrap'
 const Destroy = () => (
   <SiteWrap>
