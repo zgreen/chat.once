@@ -74,6 +74,7 @@ export default ({ render, children, chatIsReady }: { render: Function }) => (
     <style jsx>{appStyles}</style>
     <Head>
       <title>once.chat</title>
+      <meta name='viewport' content='width=device-width, initial-scale=1' />
     </Head>
     <header>
       <h1>
