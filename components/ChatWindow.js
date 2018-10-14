@@ -239,8 +239,8 @@ class ChatWindow extends Component<ChatWindowProps> {
             style={isPending ? { borderBottomColor: '#111' } : {}}
             disabled={!isReady || isPending}
             value={inputVal}
-            onFocus={() => this.setState({ showSendButton: true })}
-            onBlur={() => this.setState({ showSendButton: false })}
+            // onFocus={() => this.setState({ showSendButton: true })}
+            // onBlur={() => this.setState({ showSendButton: false })}
             onChange={handleChange}
             placeholder={!isReady ? 'Add a person to start chatting.' : ''}
           />
