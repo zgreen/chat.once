@@ -42,6 +42,7 @@ const appStyles = css`
     background-color: var(--veryLightYellow);
     border: 20px double var(--black);
     font-family: monospace;
+    grid-gap: var(--spacerStandard);
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: auto 1fr;
     box-sizing: border-box;
@@ -50,17 +51,21 @@ const appStyles = css`
     height: 100vh;
     padding: 5vmin;
   }
-  @media (max-width: 800px) {
-    .app {
-      grid-template-columns: 1fr auto;
-    }
-  }
   header {
     grid-column: 1/6;
     grid-row: 1/2;
   }
   .dot {
     animation: blink 3s linear infinite;
+  }
+  @media (max-width: 800px) {
+    .app {
+      grid-gap: 0;
+      grid-template-columns: 1fr auto;
+    }
+    header {
+      margin-bottom: var(--spacerStandard);
+    }
   }
 `
 

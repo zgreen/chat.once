@@ -11,6 +11,9 @@ export default (
       .container {
         grid-column: 4/5;
       }
+      ul {
+        padding: 0;
+      }
     `}</style>
     <Type {...{ level: 'h2', type: 'SmallCentered' }}>Users</Type>
     <ul>

@@ -2,7 +2,6 @@
 import React, { Component } from 'react'
 import Router from 'next/router'
 import css from 'styled-jsx/css'
-import { msgContainerStyles } from './styles'
 
 const Waiting = ({ isReady }: { isReady: boolean }) =>
   isReady ? (
@@ -12,10 +11,46 @@ const Waiting = ({ isReady }: { isReady: boolean }) =>
   ) : (
     <p>
       <strong>
-        You're the only one here. Invite someone to start chatting.
+        You're the only one here. Share this link with someone to start
+        chatting.
       </strong>
     </p>
   )
+
+const msgContainerStyles = css`
+  @keyframes new {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  .alias {
+    color: var(--brown);
+    display: inline-block;
+    position: relative;
+  }
+  .alias::after {
+    animation: new 0.5s forwards;
+    background-color: tomato;
+    bottom: 0;
+    content: '';
+    display: inline-block;
+    height: 1px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+  }
+  .container {
+    display: flex;
+  }
+  .message {
+    display: inline-block;
+    margin-left: 10px;
+    max-width: 300px;
+  }
+`
 
 const Message = ({
   boxSk,
@@ -83,7 +118,6 @@ const chatWindowStyles = css`
     flex-direction: column;
     grid-column: 1/4;
     grid-row: 2/6;
-    margin-right: 40px;
   }
   @media (max-width: 800px) {
     .chatWindow {

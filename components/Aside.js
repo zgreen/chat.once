@@ -43,7 +43,6 @@ export default ({
         grid-column: 5/6;
         grid-row: 2/6;
         overflow: scroll;
-        padding: 10px;
       }
       .isMobile a {
         text-decoration: none;
@@ -76,6 +75,7 @@ export default ({
         margin-bottom: var(--spacerStandard);
         padding: var(--spacerStandard);
         text-align: center;
+        text-decoration: none;
         width: 100%;
       }
       .actionCopy {

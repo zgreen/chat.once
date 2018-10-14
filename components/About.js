@@ -14,6 +14,9 @@ export default () => (
       li {
         margin-bottom: 5px;
       }
+      strong {
+        color: var(--tomato);
+      }
       ul {
         padding: 0 0 0 var(--spacerStandard);
       }
@@ -30,16 +33,20 @@ export default () => (
         <a href='https://github.com/tonyg/js-nacl'>
           <code>js-nacl</code>
         </a>
+        .
       </li>
       <li>
         Encrypted messages are stored in{' '}
-        <a href='https://firebase.google.com/'>Google Firebase</a>
+        <a href='https://firebase.google.com/'>Google Firebase</a>.
       </li>
       <li>
         Any user may destroy their current chat at any time. This erases the
         entire chat.
       </li>
       <li>All chats are destroyed within one hour of their creation.</li>
+      <li>
+        <a href=''>GitHub</a>.
+      </li>
     </ul>
   </small>
 )
