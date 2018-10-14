@@ -1,7 +1,6 @@
 // @flow
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import About from './About'
-import Screen from './Screen'
 import Type from './Typography'
 
 const Break = () => (
@@ -33,6 +32,7 @@ export default ({
   handleChange: Function,
   handleCommand: Function,
   handleUsernameSubmit: Function,
+  mobileScreen: string,
   style: Object,
   username: string,
   uuid: string
