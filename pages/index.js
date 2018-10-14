@@ -251,6 +251,7 @@ class Home extends Component<HomeProps> {
                       handleChange,
                       handleSubmit,
                       inputVal,
+                      isMobile,
                       username,
                       status,
                       style,

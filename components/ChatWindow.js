@@ -160,9 +160,27 @@ const chatWindowStyles = css`
   .noMessages {
     color: var(--brown);
   }
+  .send {
+    border: 0;
+    border-radius: 0;
+    background-color: var(--black);
+    bottom: 0;
+    color: var(--veryLightYellow);
+    height: 30px;
+    font-weight: bold;
+    left: 0;
+    letter-spacing: 3px;
+    position: fixed;
+    text-transform: uppercase;
+    width: 100%;
+    z-index: 1;
+  }
 `
 
 class ChatWindow extends Component<ChatWindowProps> {
+  state = {
+    showSendButton: false
+  }
   componentDidUpdate (prevProps) {
     const { messagesContainer } = this
     const { messages } = this.props
@@ -183,12 +201,14 @@ class ChatWindow extends Component<ChatWindowProps> {
       handleChange,
       handleSubmit,
       inputVal,
+      isMobile,
       status,
       style,
       uuid
     } = this.props
     const isPending = status === 'pending'
     const isReady = Object.keys(users).length > 1
+    const { showSendButton } = this.state
     return (
       <div style={style} className='chatWindow'>
         <style jsx>{chatWindowStyles}</style>
@@ -219,9 +239,21 @@ class ChatWindow extends Component<ChatWindowProps> {
             style={isPending ? { borderBottomColor: '#111' } : {}}
             disabled={!isReady || isPending}
             value={inputVal}
+            onFocus={() => this.setState({ showSendButton: true })}
+            onBlur={() => this.setState({ showSendButton: false })}
             onChange={handleChange}
             placeholder={!isReady ? 'Add a person to start chatting.' : ''}
           />
+          {isMobile &&
+            showSendButton && (
+            <button
+              className='send'
+              disabled={!isReady || isPending}
+              type='submit'
+            >
+                send
+            </button>
+          )}
         </form>
       </div>
     )
