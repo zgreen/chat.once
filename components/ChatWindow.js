@@ -1,7 +1,8 @@
 // @flow
 import React, { Component } from 'react'
 import Router from 'next/router'
-import { chatWindowStyles, msgContainerStyles } from './styles'
+import css from 'styled-jsx/css'
+import { msgContainerStyles } from './styles'
 
 const Waiting = ({ isReady }: { isReady: boolean }) =>
   isReady ? (
@@ -70,9 +71,62 @@ type ChatWindowProps = {
   messages: Object,
   nacl: Object,
   status: string,
+  style: Object,
   users: Object,
   uuid: string
 }
+
+const chatWindowStyles = css`
+  .chatWindow {
+    align-content: flex-end;
+    display: flex;
+    flex-direction: column;
+    grid-column: 1/4;
+    grid-row: 2/6;
+    margin-right: 40px;
+  }
+  @media (max-width: 800px) {
+    .chatWindow {
+      grid-column: 1/2;
+      grid-row: 2/3;
+      margin-right: var(--spacerStandard);
+    }
+  }
+  .input {
+    background-color: var(--veryLightYellow);
+    border: 0;
+    box-sizing: border-box;
+    ${''} border: 1px solid black;
+    font-family: monospace;
+    font-size: var(--baseFontSize);
+    height: 40px;
+    margin: 0;
+    padding: 0 10px;
+    width: 100%;
+  }
+  .input:disabled {
+    opacity: 0.5;
+  }
+  .label {
+    display: block;
+    font-style: italic;
+  }
+  .labelActiveText {
+    opacity: 0.5;
+  }
+  .messages,
+  .noMessages {
+    margin-bottom: 20px;
+    margin-top: auto;
+  }
+  .messages {
+    overflow-x: visible;
+    overflow-y: scroll;
+  }
+  .noMessages {
+    color: var(--brown);
+  }
+`
 
 class ChatWindow extends Component<ChatWindowProps> {
   componentDidUpdate (prevProps) {
@@ -96,12 +150,13 @@ class ChatWindow extends Component<ChatWindowProps> {
       handleSubmit,
       inputVal,
       status,
+      style,
       uuid
     } = this.props
     const isPending = status === 'pending'
     const isReady = Object.keys(users).length > 1
     return (
-      <div className='chatWindow'>
+      <div style={style} className='chatWindow'>
         <style jsx>{chatWindowStyles}</style>
         <div
           className='messages'

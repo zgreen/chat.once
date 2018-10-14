@@ -3,12 +3,16 @@ import 'firebase/database'
 import React, { Component, Fragment } from 'react'
 import Router from 'next/router'
 import escape from 'lodash.escape'
-import * as firebase from 'firebase'
+import { initializeApp, database } from 'firebase'
 import naclFactory from 'js-nacl'
 import Aside from '../components/Aside'
 import ChatWindow from '../components/ChatWindow'
 import Loading from '../components/Loading'
+import Main from '../components/Main'
 import SiteWrap from '../components/SiteWrap'
+import Screen from '../components/Screen'
+import ScreenActions from '../components/ScreenActions'
+import Users from '../components/Users'
 
 type HomeProps = {
   id: String,
@@ -42,17 +46,15 @@ class Home extends Component<HomeProps> {
     }
     return {}
   }
-  constructor (props) {
-    super(props)
-    console.log('props', props)
-  }
   state = {
     inputVal: '',
     messages: {},
     alias: '',
     aliasInput: '',
+    mobileScreen: '',
     status: 'ready',
-    users: {}
+    users: {},
+    viewport: 'mobile'
   }
   componentDidCatch (err) {
     console.error(err)
@@ -62,16 +64,17 @@ class Home extends Component<HomeProps> {
   }
   componentDidMount () {
     const { id, isNew, lifetime } = this.props
+    this.setViewport()
     this.initFirebase()
     naclFactory.instantiate(nacl => {
       this.nacl = nacl
       this.keyPair = this.nacl.crypto_box_keypair()
     })
     if (isNew) {
-      console.log('is new!')
       Router.push(`/?id=${id}`, `/?id=${id}`, { shallow: true })
     }
     this.handleUsernameSubmit()
+    this.handleResize()
     setTimeout(() => {
       Router.push({
         pathname: '/destroy'
@@ -87,6 +90,18 @@ class Home extends Component<HomeProps> {
     this.database.ref(`chats/${id}/command`).set({
       value: command
     })
+  }
+  setViewport = width => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    this.setState({ viewport: window.innerWidth > 800 ? 'desktop' : 'mobile' })
+  }
+  handleResize = () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    window.addEventListener('resize', this.setViewport)
   }
   handleUsernameSubmit = (e = { preventDefault: () => null }) => {
     e.preventDefault()
@@ -141,9 +156,14 @@ class Home extends Component<HomeProps> {
       )
     })
   }
+  handleScreenAction = (screen = '') => {
+    this.setState(prevState => ({
+      mobileScreen: prevState.mobileScreen === screen ? '' : screen
+    }))
+  }
   initFirebase = () => {
     const { id, uuid } = this.props
-    firebase.initializeApp({
+    initializeApp({
       apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
       authDomain: 'oncechat-22dac.firebaseapp.com',
       databaseURL: 'https://oncechat-22dac.firebaseio.com',
@@ -151,7 +171,7 @@ class Home extends Component<HomeProps> {
       storageBucket: 'oncechat-22dac.appspot.com',
       messagingSenderId: '250112620252'
     })
-    this.database = firebase.database()
+    this.database = database()
 
     // Commands
     this.database.ref(`chats/${id}/command`).on('value', snapshot => {
@@ -193,41 +213,80 @@ class Home extends Component<HomeProps> {
       handleChange,
       handleSubmit,
       handleCommand,
+      handleScreenAction,
       nacl
     } = this
     const { username, uuid } = this.props
-    const { alias, users, messages, inputVal, status } = this.state
+    const {
+      alias,
+      users,
+      messages,
+      mobileScreen,
+      inputVal,
+      status,
+      viewport
+    } = this.state
     const userRecordExists = Object.keys(users).find(
       key => users[key].value.uuid === uuid
     )
+    const isMobile = viewport === 'mobile'
     return (
       <SiteWrap>
         {this.keyPair && userRecordExists ? (
           <Fragment>
-            <ChatWindow
+            {isMobile && (
+              <ScreenActions {...{ handleScreenAction, mobileScreen }} />
+            )}
+            <Screen
               {...{
-                alias,
-                boxSk: this.keyPair.boxSk,
-                users,
-                messages,
-                nacl,
-                handleChange,
-                handleSubmit,
-                inputVal,
-                username,
-                status,
-                uuid
+                isActiveScreen: mobileScreen === '',
+                isMobile,
+                render: style => (
+                  <ChatWindow
+                    {...{
+                      alias,
+                      boxSk: this.keyPair.boxSk,
+                      users,
+                      messages,
+                      nacl,
+                      handleChange,
+                      handleSubmit,
+                      inputVal,
+                      username,
+                      status,
+                      style,
+                      uuid
+                    }}
+                  />
+                )
               }}
             />
-            <Aside
+            <Screen
               {...{
-                alias,
-                users,
-                handleChange,
-                handleCommand,
-                handleUsernameSubmit,
-                username,
-                uuid
+                isActiveScreen: mobileScreen === 'users',
+                isMobile,
+                render: style => <Users {...{ users, uuid, style }} />
+              }}
+            />
+            <Screen
+              {...{
+                isActiveScreen: mobileScreen === 'actions',
+                isMobile,
+                render: style => (
+                  <Aside
+                    {...{
+                      alias,
+                      users,
+                      handleChange,
+                      handleCommand,
+                      handleUsernameSubmit,
+                      mobileScreen,
+                      style,
+                      username,
+                      uuid
+                    }}
+                  />
+                )
               }}
             />
           </Fragment>

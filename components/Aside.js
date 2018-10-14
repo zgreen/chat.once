@@ -1,11 +1,14 @@
 // @flow
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import About from './About'
+import Screen from './Screen'
+import Type from './Typography'
 
 const Break = () => (
   <div>
     <style jsx>{`
       div {
+        color: var(--brown);
         font-size: 24px;
         margin: 16px;
         text-align: center;
@@ -20,6 +23,8 @@ export default ({
   handleChange,
   handleCommand,
   handleUsernameSubmit,
+  mobileScreen,
+  style,
   username,
   uuid
 }: {
@@ -28,31 +33,28 @@ export default ({
   handleChange: Function,
   handleCommand: Function,
   handleUsernameSubmit: Function,
+  style: Object,
   username: string,
   uuid: string
 }) => (
-  <aside>
+  <aside style={style}>
     <style jsx>{`
       aside {
-        background-color: var(--black);
-        color: var(--veryLightYellow);
-        border: 10px double var(--veryLightYellow);
-        grid-column: 3/4;
-        grid-row: 1/5;
+        grid-column: 5/6;
+        grid-row: 2/6;
         overflow: scroll;
         padding: 10px;
       }
-      a {
+      .isMobile a {
         text-decoration: none;
-      }
-      h2 {
-        text-align: center;
       }
       input {
         background-color: transparent;
         border: 0;
-        border-bottom: 3px solid var(--tomato);
-        color: var(--tomato);
+        border-bottom: 3px solid currentColor;
+        color: var(--black);
+        margin-bottom: 10px;
+        width: 100%;
       }
       p {
         font-size: 16px;
@@ -66,16 +68,15 @@ export default ({
       .action {
         border: 2px solid currentColor;
         border-radius: 10px;
-        color: var(--tomato);
-        flex: 1;
+        color: var(--black);
+        cursor: pointer;
+        display: block;
         font-weight: bold;
         font-size: 16px;
-        line-height: 1;
-        padding: 10px;
-      }
-      input,
-      .action:first-child {
-        margin-right: 5px;
+        margin-bottom: var(--spacerStandard);
+        padding: var(--spacerStandard);
+        text-align: center;
+        width: 100%;
       }
       .actionCopy {
         flex: 1 0 100%;
@@ -83,16 +84,11 @@ export default ({
         width: 100%;
       }
       .actionsContainer {
-        flex-wrap: wrap;
         padding: 10px;
-      }
-      .actionsContainer,
-      .usernameWrapper {
-        display: flex;
       }
     `}</style>
     <section className='actions'>
-      <h2>Actions</h2>
+      <Type {...{ level: 'h2', type: 'SmallCentered' }}>Actions</Type>
       <div className='actionsContainer'>
         <a className='action button' href='/'>
           Start a new chat
@@ -117,7 +113,7 @@ export default ({
         <form onSubmit={handleUsernameSubmit}>
           <div className='userNameFields'>
             <p>
-              Your random username is: <strong>{username}</strong>
+              Your random username is: <strong>{username}</strong>.
             </p>
             <label className='userNameNote'>
               <p>You may change it, but only once.</p>

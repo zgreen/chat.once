@@ -6,7 +6,7 @@ export default () => (
         overflow: scroll;
       }
       a {
-        color: var(--veryLightYellow);
+        color: var(--brown);
       }
       h3 {
         text-align: center;
@@ -15,7 +15,7 @@ export default () => (
         margin-bottom: 5px;
       }
       ul {
-        padding: 0 0 0 10px;
+        padding: 0 0 0 var(--spacerStandard);
       }
     `}</style>
     <h3>About</h3>
