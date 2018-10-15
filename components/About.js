@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import config from '../config'
 export default () => (
   <small>
     <style jsx>{`
@@ -45,8 +47,15 @@ export default () => (
       </li>
       <li>All chats are destroyed within one hour of their creation.</li>
       <li>
+        This software is covered by the MIT License.{' '}
+        <Link href='/license'>
+          <a>View license.</a>
+        </Link>
+      </li>
+      <li>
         <a href=''>GitHub</a>.
       </li>
+      <li>{config.version}</li>
     </ul>
   </small>
 )
