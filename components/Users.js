@@ -12,7 +12,7 @@ export default (
         grid-column: 4/5;
       }
       ul {
-        padding: 0;
+        padding: 0 0 0 20px;
       }
     `}</style>
     <Type {...{ level: 'h2', type: 'SmallCentered' }}>Users</Type>
@@ -20,7 +20,7 @@ export default (
       {Object.keys(users).map(key => {
         const user = users[key].value
         return (
-          <li>
+          <li key={key}>
             {user.alias || user.username}{' '}
             {uuid && uuid === user.uuid ? <em>(you)</em> : null}
           </li>

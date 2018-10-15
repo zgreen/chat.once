@@ -5,6 +5,7 @@ export default ({ isActiveScreen, isMobile, render }) => {
   const baseStyle = {
     gridColumn: '1/2',
     gridRow: '2/3',
+    marginTop: 'var(--spacerStandard)',
     opacity: 0,
     pointerEvents: 'none',
     visibility: 'hidden'

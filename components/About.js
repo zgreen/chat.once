@@ -20,7 +20,7 @@ export default () => (
         color: var(--tomato);
       }
       ul {
-        padding: 0 0 0 var(--spacerStandard);
+        padding: 0 0 0 15px;
       }
     `}</style>
     <h3>About</h3>
@@ -28,7 +28,10 @@ export default () => (
       <li>
         <strong>HOLD UP!</strong> This app is an experiment; use at your own
         risk! I make no claims about its safety or integrity. Please use Signal
-        or Wire :)
+        or Wire :){' '}
+        <Link href='/license'>
+          <a>Also, read the license.</a>
+        </Link>
       </li>
       <li>
         All chat messages are encrypted using{' '}
@@ -53,7 +56,7 @@ export default () => (
         </Link>
       </li>
       <li>
-        <a href=''>GitHub</a>.
+        <a href='https://github.com/zgreen/chat.once'>GitHub</a>.
       </li>
       <li>{config.version}</li>
     </ul>

@@ -160,27 +160,21 @@ const chatWindowStyles = css`
   .noMessages {
     color: var(--brown);
   }
+  .inputWrap {
+    display: flex;
+  }
   .send {
     border: 0;
     border-radius: 0;
     background-color: var(--black);
-    bottom: 0;
     color: var(--veryLightYellow);
-    height: 30px;
     font-weight: bold;
-    left: 0;
     letter-spacing: 3px;
-    position: fixed;
     text-transform: uppercase;
-    width: 100%;
-    z-index: 1;
   }
 `
 
 class ChatWindow extends Component<ChatWindowProps> {
-  state = {
-    showSendButton: false
-  }
   componentDidUpdate (prevProps) {
     const { messagesContainer } = this
     const { messages } = this.props
@@ -208,7 +202,6 @@ class ChatWindow extends Component<ChatWindowProps> {
     } = this.props
     const isPending = status === 'pending'
     const isReady = Object.keys(users).length > 1
-    const { showSendButton } = this.state
     return (
       <div style={style} className='chatWindow'>
         <style jsx>{chatWindowStyles}</style>
@@ -234,26 +227,25 @@ class ChatWindow extends Component<ChatWindowProps> {
           >
             Type something &#9660;
           </label>
-          <input
-            className='input'
-            style={isPending ? { borderBottomColor: '#111' } : {}}
-            disabled={!isReady || isPending}
-            value={inputVal}
-            // onFocus={() => this.setState({ showSendButton: true })}
-            // onBlur={() => this.setState({ showSendButton: false })}
-            onChange={handleChange}
-            placeholder={!isReady ? 'Add a person to start chatting.' : ''}
-          />
-          {isMobile &&
-            showSendButton && (
-            <button
-              className='send'
+          <div className='inputWrap'>
+            <input
+              className='input'
+              style={isPending ? { borderBottomColor: '#111' } : {}}
               disabled={!isReady || isPending}
-              type='submit'
-            >
+              value={inputVal}
+              onChange={handleChange}
+              placeholder={!isReady ? 'Add a person to start chatting.' : ''}
+            />
+            {isMobile && (
+              <button
+                className='send'
+                disabled={!isReady || isPending}
+                type='submit'
+              >
                 send
-            </button>
-          )}
+              </button>
+            )}
+          </div>
         </form>
       </div>
     )

@@ -104,7 +104,7 @@ class Home extends Component<HomeProps> {
   }
   handleUsernameSubmit = (e = { preventDefault: () => null }) => {
     e.preventDefault()
-    const { aliasInput: alias } = this.state
+    const alias = escape(this.state.aliasInput)
     const { id, username, uuid } = this.props
     this.database.ref(`chats/${id}/users/${uuid}`).set({
       value: {
@@ -119,7 +119,7 @@ class Home extends Component<HomeProps> {
     e.preventDefault()
     const { database, keyPair, nacl } = this
     const { id, username, uuid } = this.props
-    const { inputVal } = this.state
+    const inputVal = escape(this.state.inputVal)
     if (!nacl) {
       window.alert(`This message could not be signed, and wasn't sent.`)
       return
