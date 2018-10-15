@@ -23,8 +23,6 @@
     "react-copy-to-clipboard": "^5.0.1",
     "react-dom": "^16.3.1",
     "safe-buffer": "^5.1.1",
-    "tweetnacl": "^1.0.0",
-    "tweetnacl-util": "^0.15.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {
