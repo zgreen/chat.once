@@ -148,7 +148,6 @@ class Home extends Component<HomeProps> {
             uuid,
             nonce,
             packets: Object.keys(users).map(key => {
-              console.log('USER', users[key])
               return {
                 uuid: users[key].value.uuid,
                 packet: nacl.crypto_box(
