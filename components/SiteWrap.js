@@ -83,9 +83,8 @@ const appStyles = css`
   }
 `
 
-export default ({ render, children }: { render: Function }) => {
+export default ({ render, children, linkIdx }: { render: Function }) => {
   const links = ['https://github.com/zgreen', 'https://twitter.com/zgreen_']
-  const linkIdx = Math.round(Math.random())
   return (
     <div className='app'>
       <style jsx>{appStyles}</style>

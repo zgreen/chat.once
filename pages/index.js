@@ -34,6 +34,16 @@ class Home extends Component<HomeProps> {
       const chance = new Chance()
       const uuid = uuidv4()
       const id = escape(query.id) || uuidv4()
+      try {
+        const didStart = await axios.get(
+          `https://oncechat-22dac.firebaseio.com/chats/${id}/chat.json`
+        )
+        if (didStart.data && Object.keys(didStart.data).length > 0) {
+          return {}
+        }
+      } catch (err) {
+        // it's fine.
+      }
       if (!query.id) {
         await axios.put(
           `https://oncechat-22dac.firebaseio.com/validate/${
@@ -50,6 +60,7 @@ class Home extends Component<HomeProps> {
         id,
         isNew: !query.id,
         lifetime,
+        linkIdx: Math.round(Math.random()),
         uuid,
         username
       }
@@ -74,6 +85,9 @@ class Home extends Component<HomeProps> {
   }
   componentDidMount () {
     const { id, isNew, lifetime } = this.props
+    if (!id) {
+      return Router.push('/nope')
+    }
     this.setViewport()
     this.initFirebase()
     naclFactory.instantiate(nacl => {
@@ -225,7 +239,7 @@ class Home extends Component<HomeProps> {
       handleScreenAction,
       nacl
     } = this
-    const { username, uuid } = this.props
+    const { linkIdx, username, uuid } = this.props
     const {
       alias,
       users,
@@ -240,7 +254,7 @@ class Home extends Component<HomeProps> {
     )
     const isMobile = viewport === 'mobile'
     return (
-      <SiteWrap>
+      <SiteWrap {...{ linkIdx }}>
         {this.keyPair && userRecordExists ? (
           <Fragment>
             {isMobile && (
