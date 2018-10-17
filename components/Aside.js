@@ -123,7 +123,8 @@ export default class Aside extends Component<AsideProps> {
           {alias.length === 0 &&
             !didSetAlias && (
             <form
-              onSubmit={() => {
+              onSubmit={e => {
+                e.preventDefault()
                 this.setState({ didSetAlias: true }, handleUsernameSubmit)
               }}
             >
