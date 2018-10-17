@@ -38,6 +38,9 @@ const appStyles = css`
       opacity: 1;
     }
   }
+  a {
+    color: var(--black);
+  }
   .app {
     background-color: var(--veryLightYellow);
     border: 20px double var(--black);
@@ -50,6 +53,7 @@ const appStyles = css`
     line-height: 1.3;
     height: 100vh;
     padding: 5vmin;
+    position: relative;
   }
   header {
     grid-column: 1/6;
@@ -57,6 +61,13 @@ const appStyles = css`
   }
   .dot {
     animation: blink 3s linear infinite;
+  }
+  small {
+    top: 50%;
+    transform: rotate(90deg);
+    transform-origin: right;
+    right: 10px;
+    position: absolute;
   }
   @media (max-width: 800px) {
     .app {
@@ -66,32 +77,42 @@ const appStyles = css`
     header {
       margin-bottom: var(--spacerStandard);
     }
+    small {
+      top: 60%;
+    }
   }
 `
 
-export default ({ render, children, chatIsReady }: { render: Function }) => (
-  <div className='app'>
-    <style jsx>{appStyles}</style>
-    <Head>
-      <title>once.chat</title>
-      <meta name='viewport' content='width=device-width, initial-scale=1' />
-    </Head>
-    <header>
-      <h1>
-        chat
-        <span className='dot'>.</span>
-        once
-      </h1>
-      <Type
-        {...{
-          level: 'h2',
-          type: 'Small',
-          style: {}
-        }}
-      >
-        <em>Encrypted, anonymous by default, self-destructing.</em>
-      </Type>
-    </header>
-    {children}
-  </div>
-)
+export default ({ render, children }: { render: Function }) => {
+  const links = ['https://github.com/zgreen', 'https://twitter.com/zgreen_']
+  const linkIdx = Math.round(Math.random())
+  return (
+    <div className='app'>
+      <style jsx>{appStyles}</style>
+      <Head>
+        <title>once.chat</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1' />
+      </Head>
+      <header>
+        <h1>
+          chat
+          <span className='dot'>.</span>
+          once
+        </h1>
+        <Type
+          {...{
+            level: 'h2',
+            type: 'Small',
+            style: {}
+          }}
+        >
+          <em>Encrypted, anonymous by default, self-destructing.</em>
+        </Type>
+      </header>
+      {children}
+      <small>
+        <a href={links[linkIdx]}>By Zach Green</a>
+      </small>
+    </div>
+  )
+}
