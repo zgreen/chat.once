@@ -1,2 +1,4 @@
+.env
 .next
 node_modules
+now.json

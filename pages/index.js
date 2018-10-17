@@ -25,12 +25,23 @@ class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     const lifetime = 1000 * 60 * 60
     if (req) {
+      if (process.env.NODE_ENV !== 'production') {
+        require('dotenv').config()
+      }
       const axios = require('axios')
       const Chance = require('chance')
       const uuidv4 = require('uuid/v4')
       const chance = new Chance()
       const uuid = uuidv4()
       const id = escape(query.id) || uuidv4()
+      if (!query.id) {
+        await axios.put(
+          `https://oncechat-22dac.firebaseio.com/validate/${
+            process.env.VALIDATION_SECRET
+          }/${id}.json`,
+          { valid: true }
+        )
+      }
       const username = chance.name()
       setTimeout(() => {
         axios.delete(`https://oncechat-22dac.firebaseio.com/chats/${id}.json`)

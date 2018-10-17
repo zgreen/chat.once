@@ -15,6 +15,7 @@
     "buffer": "^5.1.0",
     "chance": "^1.0.16",
     "chloride": "^2.2.8",
+    "dotenv": "^6.1.0",
     "firebase": "^4.12.1",
     "js-nacl": "^1.2.2",
     "lodash.escape": "^4.0.1",
