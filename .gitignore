@@ -1,4 +1,5 @@
 .env
 .next
+.nowignore
 node_modules
 now.json

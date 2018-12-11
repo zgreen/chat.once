@@ -1,6 +1,6 @@
 {
   "name": "chat.once",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,32 +12,29 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.18.0",
-    "buffer": "^5.1.0",
-    "chance": "^1.0.16",
-    "chloride": "^2.2.8",
-    "dotenv": "^6.1.0",
-    "firebase": "^4.12.1",
-    "js-nacl": "^1.2.2",
+    "chance": "^1.0.18",
+    "dotenv": "^6.2.0",
+    "firebase": "^4.13.1",
+    "js-nacl": "^1.3.2",
     "lodash.escape": "^4.0.1",
-    "next": "^6.0.3",
-    "react": "^16.3.1",
+    "next": "^6.1.2",
+    "react": "^16.6.3",
     "react-copy-to-clipboard": "^5.0.1",
-    "react-dom": "^16.3.1",
-    "safe-buffer": "^5.1.1",
+    "react-dom": "^16.6.3",
     "uuid": "^3.3.2"
   },
   "devDependencies": {
-    "@babel/preset-flow": "^7.0.0-beta.47",
+    "@babel/preset-flow": "7.0.0-beta.47",
     "@zeit/next-bundle-analyzer": "^0.1.2",
-    "babel-eslint": "^8.2.3",
+    "babel-eslint": "^8.2.6",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-config-standard-react": "^6.0.0",
-    "eslint-plugin-flowtype": "^2.46.3",
-    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
-    "eslint-plugin-react": "^7.8.2",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-react": "^7.11.1",
     "eslint-plugin-standard": "^3.1.0"
   }
 }

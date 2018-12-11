@@ -1,6 +1,7 @@
-const withBundleAnalyzer = require('@zeit/next-bundle-analyzer')
-module.exports = withBundleAnalyzer({
-  webpack: config => ({ ...config, node: { ...config.node, fs: 'empty' } }),
+const baseConfig = {
+  webpack: config => ({ ...config, node: { ...config.node, fs: 'empty' } })
+}
+const analyzeConfig = {
   analyzeServer: ['server', 'both'].includes(process.env.BUNDLE_ANALYZE),
   analyzeBrowser: ['browser', 'both'].includes(process.env.BUNDLE_ANALYZE),
   bundleAnalyzerConfig: {
@@ -13,4 +14,9 @@ module.exports = withBundleAnalyzer({
       reportFilename: '../bundles/client.html'
     }
   }
-})
+}
+module.exports = ['browser', 'server', 'both'].includes(
+  process.env.BUNDLE_ANALYZE
+)
+  ? require('@zeit/next-bundle-analyzer')({ ...baseConfig, ...analyzeConfig })
+  : baseConfig
