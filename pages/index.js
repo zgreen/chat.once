@@ -69,6 +69,7 @@ class Home extends Component<HomeProps> {
   }
   state = {
     inputVal: '',
+    keyPair: {},
     messages: {},
     alias: '',
     aliasInput: '',
@@ -84,21 +85,29 @@ class Home extends Component<HomeProps> {
     })
   }
   componentDidMount () {
+    const {
+      setViewport,
+      initFirebase,
+      handleResize,
+      handleUsernameSubmit
+    } = this
     const { id, isNew, lifetime } = this.props
     if (!id) {
       return Router.push('/nope')
     }
-    this.setViewport()
-    this.initFirebase()
+    setViewport()
+    initFirebase()
     naclFactory.instantiate(nacl => {
       this.nacl = nacl
-      this.keyPair = this.nacl.crypto_box_keypair()
+      this.setState(
+        { keyPair: this.nacl.crypto_box_keypair() },
+        handleUsernameSubmit
+      )
     })
     if (isNew) {
       Router.push(`/?id=${id}`, `/?id=${id}`, { shallow: true })
     }
-    this.handleUsernameSubmit()
-    this.handleResize()
+    handleResize()
     setTimeout(() => {
       Router.push({
         pathname: '/destroy'
@@ -129,6 +138,7 @@ class Home extends Component<HomeProps> {
   }
   handleUsernameSubmit = (e = { preventDefault: () => null }) => {
     e.preventDefault()
+    const { keyPair } = this.state
     const alias = escape(this.state.aliasInput)
     const { id, username, uuid } = this.props
     this.database.ref(`chats/${id}/users/${uuid}`).set({
@@ -136,14 +146,15 @@ class Home extends Component<HomeProps> {
         alias,
         username,
         uuid,
-        boxPk: this.keyPair.boxPk
+        boxPk: keyPair.boxPk
       }
     })
   }
   handleSubmit = e => {
     e.preventDefault()
-    const { database, keyPair, nacl } = this
+    const { database, nacl } = this
     const { id, username, uuid } = this.props
+    const { keyPair } = this.state
     const inputVal = escape(this.state.inputVal)
     if (!nacl) {
       window.alert(`This message could not be signed, and wasn't sent.`)
@@ -242,6 +253,7 @@ class Home extends Component<HomeProps> {
     const { linkIdx, username, uuid } = this.props
     const {
       alias,
+      keyPair,
       users,
       messages,
       mobileScreen,
@@ -255,7 +267,7 @@ class Home extends Component<HomeProps> {
     const isMobile = viewport === 'mobile'
     return (
       <SiteWrap {...{ linkIdx }}>
-        {this.keyPair && userRecordExists ? (
+        {keyPair && userRecordExists ? (
           <Fragment>
             {isMobile && (
               <ScreenActions {...{ handleScreenAction, mobileScreen }} />
@@ -268,7 +280,7 @@ class Home extends Component<HomeProps> {
                   <ChatWindow
                     {...{
                       alias,
-                      boxSk: this.keyPair.boxSk,
+                      boxSk: keyPair.boxSk,
                       users,
                       messages,
                       nacl,
