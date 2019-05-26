@@ -1,9 +1,7 @@
 // @flow
-import 'firebase/database'
 import React, { Component, Fragment } from 'react'
 import Router from 'next/router'
 import escape from 'lodash.escape'
-import { initializeApp, database } from 'firebase'
 import naclFactory from 'js-nacl'
 import Aside from '../components/Aside'
 import ChatWindow from '../components/ChatWindow'
@@ -25,9 +23,6 @@ class Home extends Component<HomeProps> {
   static async getInitialProps ({ req, res, query }) {
     const lifetime = 1000 * 60 * 60
     if (req) {
-      if (process.env.NODE_ENV !== 'production') {
-        require('dotenv').config()
-      }
       const axios = require('axios')
       const Chance = require('chance')
       const uuidv4 = require('uuid/v4')
@@ -89,21 +84,25 @@ class Home extends Component<HomeProps> {
       return Router.push('/nope')
     }
     this.setViewport()
-    this.initFirebase()
-    naclFactory.instantiate(nacl => {
+    naclFactory.instantiate(async nacl => {
       this.nacl = nacl
       this.keyPair = this.nacl.crypto_box_keypair()
+      const firebase = await import(
+        /* webpackChunkName: "firebase" */ 'firebase/app'
+      )
+      await import(/* webpackChunkName: "firebaseDB" */ 'firebase/database')
+      this.initFirebase(firebase.initializeApp, firebase.database)
+      if (isNew) {
+        Router.push(`/?id=${id}`, `/?id=${id}`, { shallow: true })
+      }
+      this.handleUsernameSubmit()
+      this.handleResize()
+      setTimeout(() => {
+        Router.push({
+          pathname: '/destroy'
+        })
+      }, lifetime)
     })
-    if (isNew) {
-      Router.push(`/?id=${id}`, `/?id=${id}`, { shallow: true })
-    }
-    this.handleUsernameSubmit()
-    this.handleResize()
-    setTimeout(() => {
-      Router.push({
-        pathname: '/destroy'
-      })
-    }, lifetime)
   }
   handleChange = (e, inputVal = 'inputVal') => {
     this.setState({ [inputVal]: e.target.value })
@@ -184,7 +183,7 @@ class Home extends Component<HomeProps> {
       mobileScreen: prevState.mobileScreen === screen ? '' : screen
     }))
   }
-  initFirebase = () => {
+  initFirebase = (initializeApp, database) => {
     const { id, uuid } = this.props
     initializeApp({
       apiKey: 'AIzaSyCmV_xvYmfs8Yk-NmgDxKZsnMujMy_jSJ4',
