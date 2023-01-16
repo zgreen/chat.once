@@ -11,7 +11,7 @@
   "author": "Zach Green",
   "license": "MIT",
   "dependencies": {
-    "acorn": "^6.1.1",
+    "acorn": "^6.4.1",
     "axios": "^0.18.1",
     "chance": "^1.0.18",
     "firebase": "^6.2.0",
